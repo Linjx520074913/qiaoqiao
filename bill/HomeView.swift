@@ -80,6 +80,11 @@ struct HomeView: View {
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 220)
+            .simultaneousGesture(
+                // 添加手势以"吃掉"水平滑动，让TabView优先响应
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in }
+            )
 
             // 自定义页面指示器
             HStack(spacing: 8) {
