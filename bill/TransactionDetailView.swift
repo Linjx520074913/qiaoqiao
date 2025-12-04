@@ -12,20 +12,16 @@ struct TransactionDetailView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @State private var showDeleteConfirmation = false
+    @State private var showFullImage = false
 
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 24) {
-                    // 金额展示卡片
+                VStack(spacing: 20) {
+                    // 金额展示卡片 - 更紧凑的设计
                     amountCard
 
-                    // 图片附件（如果有）
-                    if transaction.imageData != nil {
-                        imageAttachmentSection
-                    }
-
-                    // 详细信息
+                    // 详细信息 - 全新设计
                     detailsSection
 
                     // 操作按钮
@@ -35,7 +31,7 @@ struct TransactionDetailView: View {
                 }
                 .padding(.top, 20)
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color(red: 0.97, green: 0.97, blue: 0.98))
             .navigationTitle("账单详情")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(trailing: Button("关闭") {
@@ -50,140 +46,238 @@ struct TransactionDetailView: View {
         } message: {
             Text("确定要删除这笔账单吗？此操作无法撤销。")
         }
-    }
-
-    // MARK: - 图片附件
-    private var imageAttachmentSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "photo.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(.blue)
-                Text("账单图片")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.primary)
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-
+        .fullScreenCover(isPresented: $showFullImage) {
             if let imageData = transaction.imageData,
                let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+                FullImageView(image: uiImage, isPresented: $showFullImage)
             }
         }
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 10)
-        .padding(.horizontal, 20)
     }
 
-    // MARK: - 金额展示卡片
+    // MARK: - 金额展示卡片（渐变设计）
     private var amountCard: some View {
-        VStack(spacing: 20) {
-            // 分类图标
-            ZStack {
+        ZStack {
+            // 渐变背景
+            LinearGradient(
+                gradient: Gradient(colors: transaction.amount >= 0 ? [
+                    Color(red: 0.2, green: 0.78, blue: 0.35),
+                    Color(red: 0.15, green: 0.68, blue: 0.30)
+                ] : [
+                    Color(red: 0.35, green: 0.45, blue: 0.95),
+                    Color(red: 0.25, green: 0.35, blue: 0.85)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            // 装饰性圆形
+            GeometryReader { geo in
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                transaction.category.color.opacity(0.3),
-                                transaction.category.color.opacity(0.1)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 80, height: 80)
+                    .fill(.white.opacity(0.1))
+                    .frame(width: 150, height: 150)
+                    .offset(x: geo.size.width - 60, y: -30)
 
-                Image(systemName: transaction.category.icon)
-                    .font(.system(size: 36))
-                    .foregroundColor(transaction.category.color)
+                Circle()
+                    .fill(.white.opacity(0.05))
+                    .frame(width: 100, height: 100)
+                    .offset(x: -20, y: geo.size.height - 40)
             }
 
-            // 金额
-            VStack(spacing: 8) {
-                Text(transaction.amount >= 0 ? "收入" : "支出")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
+            VStack(spacing: 16) {
+                // 分类标签
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(.white.opacity(0.25))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: transaction.category.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    Text(transaction.category.rawValue)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white.opacity(0.9))
 
-                Text("\(transaction.amount >= 0 ? "+" : "")¥\(abs(transaction.amount), specifier: "%.2f")")
-                    .font(.system(size: 42, weight: .bold))
-                    .foregroundColor(transaction.amount >= 0 ? .green : .red)
+                    Spacer()
+
+                    // 类型标签
+                    HStack(spacing: 6) {
+                        Image(systemName: transaction.amount >= 0 ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                            .font(.system(size: 12))
+                        Text(transaction.amount >= 0 ? "收入" : "支出")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(.white.opacity(0.95))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(.white.opacity(0.2)))
+                }
+
+                // 商户名称
+                HStack {
+                    Text(transaction.merchantName)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+
+                // 金额
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(transaction.amount >= 0 ? "+" : "-")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                    Text("¥")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                    Text(String(format: "%.2f", abs(transaction.amount)))
+                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    Spacer()
+                }
             }
-
-            // 商户名称
-            Text(transaction.merchantName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.primary)
+            .padding(24)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 30)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: .black.opacity(0.05), radius: 10)
+        .frame(height: 180)
+        .cornerRadius(24)
+        .shadow(color: (transaction.amount >= 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.35, green: 0.45, blue: 0.95)).opacity(0.3), radius: 20, x: 0, y: 10)
         .padding(.horizontal, 20)
     }
 
-    // MARK: - 详细信息
+    // MARK: - 详细信息（新设计）
     private var detailsSection: some View {
-        VStack(spacing: 0) {
-            DetailRow(
-                icon: "tag.fill",
-                iconColor: transaction.category.color,
-                title: "分类",
-                value: transaction.category.rawValue
-            )
+        VStack(spacing: 12) {
+            // 时间和备注组合
+            VStack(spacing: 12) {
+                // 交易时间
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                    }
 
-            Divider()
-                .padding(.leading, 60)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("交易时间")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                        Text("\(formatDate(transaction.date)) \(formatTime(transaction.date))")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.primary)
+                    }
 
-            DetailRow(
-                icon: "doc.text.fill",
-                iconColor: .blue,
-                title: "备注",
-                value: transaction.description
-            )
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(16)
 
-            Divider()
-                .padding(.leading, 60)
+                // 备注
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "note.text")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.50))
+                    }
 
-            DetailRow(
-                icon: "calendar",
-                iconColor: .orange,
-                title: "日期",
-                value: formatDate(transaction.date)
-            )
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("备注")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                        Text(transaction.description.isEmpty ? "无备注" : transaction.description)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                    }
 
-            Divider()
-                .padding(.leading, 60)
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(16)
 
-            DetailRow(
-                icon: "clock.fill",
-                iconColor: .purple,
-                title: "时间",
-                value: formatTime(transaction.date)
-            )
+                // 图片附件（小缩略图）
+                if let imageData = transaction.imageData,
+                   let uiImage = UIImage(data: imageData) {
+                    Button(action: {
+                        showFullImage = true
+                    }) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "photo.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.blue)
+                            }
 
-            Divider()
-                .padding(.leading, 60)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("账单图片")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                Text("点击查看原图")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.primary)
+                            }
 
-            DetailRow(
-                icon: "number",
-                iconColor: .gray,
-                title: "账单ID",
-                value: String(transaction.id.prefix(8))
-            )
+                            Spacer()
+
+                            // 缩略图
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray.opacity(0.5))
+                        }
+                        .padding(16)
+                        .background(Color.white)
+                        .cornerRadius(16)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+
+                // 账单ID
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "number.square.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.gray)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("账单ID")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.secondary)
+                        Text(String(transaction.id.prefix(12)))
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(16)
+            }
         }
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 10)
         .padding(.horizontal, 20)
     }
 
@@ -213,14 +307,14 @@ struct TransactionDetailView: View {
     // MARK: - Helper Functions
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年MM月dd日 EEEE"
+        formatter.dateFormat = "MM月dd日 EEEE"
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter.string(from: date)
     }
 
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
+        formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
     }
 
@@ -230,41 +324,77 @@ struct TransactionDetailView: View {
     }
 }
 
-// MARK: - 详情行组件
-struct DetailRow: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let value: String
+// MARK: - 全屏图片查看器
+struct FullImageView: View {
+    let image: UIImage
+    @Binding var isPresented: Bool
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
 
     var body: some View {
-        HStack(spacing: 16) {
-            // 图标
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 44, height: 44)
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(iconColor)
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .scaleEffect(scale)
+                .offset(offset)
+                .gesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            let delta = value / lastScale
+                            lastScale = value
+                            scale = min(max(scale * delta, 1), 4)
+                        }
+                        .onEnded { _ in
+                            lastScale = 1.0
+                            if scale < 1 {
+                                withAnimation {
+                                    scale = 1
+                                    offset = .zero
+                                }
+                            }
+                        }
+                )
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            if scale > 1 {
+                                offset = CGSize(
+                                    width: lastOffset.width + value.translation.width,
+                                    height: lastOffset.height + value.translation.height
+                                )
+                            }
+                        }
+                        .onEnded { _ in
+                            lastOffset = offset
+                        }
+                )
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.black.opacity(0.5))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "xmark")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(20)
+                }
+                Spacer()
             }
-
-            // 标题和值
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
-
-                Text(value)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.primary)
-            }
-
-            Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .statusBar(hidden: true)
     }
 }
 
