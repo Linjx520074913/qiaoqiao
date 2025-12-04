@@ -155,6 +155,54 @@ class AppState: ObservableObject {
         return monthTransactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }
     }
 
+    // 计算属性：今日支出
+    var todayExpense: Double {
+        let calendar = Calendar.current
+        let now = Date()
+        let todayTransactions = transactions.filter {
+            calendar.isDate($0.date, inSameDayAs: now)
+        }
+        return abs(todayTransactions.filter { $0.amount < 0 }.reduce(0) { $0 + $1.amount })
+    }
+
+    // 计算属性：今日收入
+    var todayIncome: Double {
+        let calendar = Calendar.current
+        let now = Date()
+        let todayTransactions = transactions.filter {
+            calendar.isDate($0.date, inSameDayAs: now)
+        }
+        return todayTransactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }
+    }
+
+    // 计算属性：今日交易次数
+    var todayTransactionCount: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        return transactions.filter {
+            calendar.isDate($0.date, inSameDayAs: now)
+        }.count
+    }
+
+    // 计算属性：昨日支出
+    var yesterdayExpense: Double {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        let yesterdayTransactions = transactions.filter {
+            calendar.isDate($0.date, inSameDayAs: yesterday)
+        }
+        return abs(yesterdayTransactions.filter { $0.amount < 0 }.reduce(0) { $0 + $1.amount })
+    }
+
+    // 计算属性：本月剩余天数
+    var daysRemainingInMonth: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let range = calendar.range(of: .day, in: .month, for: now) else { return 0 }
+        let currentDay = calendar.component(.day, from: now)
+        return range.count - currentDay + 1  // 包括今天
+    }
+
     // 检查交易是否重复
     func isDuplicateTransaction(_ newTransaction: Transaction) -> Bool {
         let timeThreshold: TimeInterval = 300 // 5分钟内认为是重复

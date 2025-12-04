@@ -35,6 +35,10 @@ struct HomeView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
 
+                    // 今日支出卡片
+                    todaySummaryCard
+                        .padding(.horizontal, 20)
+
                     // 本月概览卡片
                     monthlyOverview
                         .padding(.horizontal, 20)
@@ -61,6 +65,107 @@ struct HomeView: View {
     }
 
     // MARK: - 视图组件
+
+    // 今日支出卡片
+    private var todaySummaryCard: some View {
+        VStack(spacing: 20) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("今日支出")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("¥")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text(String(format: "%.2f", appState.todayExpense))
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
+
+                Spacer()
+
+                // 对比昨日
+                if appState.yesterdayExpense > 0 {
+                    VStack(alignment: .trailing, spacing: 8) {
+                        let change = appState.todayExpense - appState.yesterdayExpense
+                        let changePercent = (change / appState.yesterdayExpense) * 100
+
+                        HStack(spacing: 4) {
+                            Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
+                                .font(.system(size: 14, weight: .bold))
+                            Text(String(format: "%.0f%%", abs(changePercent)))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        .foregroundColor(change >= 0 ? Color(red: 1.0, green: 0.8, blue: 0.8) : Color(red: 0.8, green: 1.0, blue: 0.9))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(.white.opacity(0.2))
+                        )
+
+                        Text("较昨日")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
+            }
+
+            // 底部信息栏
+            HStack(spacing: 20) {
+                HStack(spacing: 6) {
+                    Image(systemName: "list.bullet.rectangle")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("\(appState.todayTransactionCount) 笔交易")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+
+                if appState.todayIncome > 0 {
+                    Divider()
+                        .frame(height: 16)
+                        .background(.white.opacity(0.3))
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.circle")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text(String(format: "收入 ¥%.2f", appState.todayIncome))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                }
+
+                Spacer()
+            }
+        }
+        .padding(24)
+        .background(
+            ZStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 0.95, green: 0.47, blue: 0.45),
+                        Color(red: 0.85, green: 0.37, blue: 0.35)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                GeometryReader { geo in
+                    Circle()
+                        .fill(.white.opacity(0.1))
+                        .frame(width: 140, height: 140)
+                        .offset(x: geo.size.width - 70, y: -40)
+                }
+            }
+        )
+        .cornerRadius(24)
+        .shadow(color: Color(red: 0.95, green: 0.47, blue: 0.45).opacity(0.4), radius: 20, x: 0, y: 8)
+    }
 
     // 问候语头部
     private var greetingHeader: some View {
@@ -422,79 +527,13 @@ struct MonthlyFinanceCard: View {
             }
             .frame(height: 120)
 
-            // 预算卡片
-            VStack(spacing: 16) {
-                HStack {
-                    HStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "chart.pie.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.50))
-                        }
-
-                        Text("本月预算")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(String(format: "%.0f%%", budgetUsagePercent))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : .primary)
-
-                        Text("已使用")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                // 进度条
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
-                            .frame(height: 10)
-
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: budgetUsagePercent > 90 ? [
-                                        Color(red: 0.95, green: 0.47, blue: 0.45),
-                                        Color(red: 0.85, green: 0.37, blue: 0.35)
-                                    ] : [
-                                        Color(red: 0.35, green: 0.45, blue: 0.95),
-                                        Color(red: 0.45, green: 0.55, blue: 1.0)
-                                    ]),
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * CGFloat(budgetUsagePercent / 100), height: 10)
-                    }
-                }
-                .frame(height: 10)
-
-                HStack {
-                    Text(String(format: "¥%.2f / ¥%.2f", expense, budget))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
-
-                    Spacer()
-
-                    Text(String(format: "剩余 ¥%.2f", remainingBudget))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(remainingBudget > 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.95, green: 0.47, blue: 0.45))
-                }
-            }
-            .padding(20)
-            .background(Color.white)
-            .cornerRadius(20)
-            .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+            // 预算卡片 - 使用圆形进度环
+            BudgetProgressCard(
+                expense: expense,
+                budget: budget,
+                budgetUsagePercent: budgetUsagePercent,
+                remainingBudget: remainingBudget
+            )
         }
     }
 }
@@ -831,6 +870,108 @@ struct TransactionRow: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - 预算进度卡片（圆形进度环）
+struct BudgetProgressCard: View {
+    let expense: Double
+    let budget: Double
+    let budgetUsagePercent: Double
+    let remainingBudget: Double
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        HStack(spacing: 24) {
+            // 左侧圆形进度环
+            ZStack {
+                // 背景圆环
+                Circle()
+                    .stroke(
+                        Color(red: 0.95, green: 0.95, blue: 0.97),
+                        lineWidth: 12
+                    )
+                    .frame(width: 100, height: 100)
+
+                // 进度圆环
+                Circle()
+                    .trim(from: 0, to: min(budgetUsagePercent / 100, 1.0))
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: budgetUsagePercent > 90 ? [
+                                Color(red: 0.95, green: 0.47, blue: 0.45),
+                                Color(red: 0.85, green: 0.37, blue: 0.35)
+                            ] : [
+                                Color(red: 0.35, green: 0.45, blue: 0.95),
+                                Color(red: 0.45, green: 0.55, blue: 1.0)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
+                    .frame(width: 100, height: 100)
+                    .rotationEffect(.degrees(-90))
+
+                // 中心百分比
+                VStack(spacing: 2) {
+                    Text(String(format: "%.0f%%", budgetUsagePercent))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : Color(red: 0.35, green: 0.45, blue: 0.95))
+                    Text("已用")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            // 右侧信息
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.pie.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                    Text("本月预算")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("剩余")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(String(format: "¥%.2f", remainingBudget))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(remainingBudget > 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.95, green: 0.47, blue: 0.45))
+                    }
+
+                    // 日均可用
+                    let dailyAvailable = remainingBudget / Double(max(appState.daysRemainingInMonth, 1))
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Text("还有 \(appState.daysRemainingInMonth) 天")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(String(format: "日均 ¥%.0f", dailyAvailable))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+
+                    // 已花费/总预算
+                    Text(String(format: "¥%.2f / ¥%.2f", expense, budget))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary.opacity(0.7))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
     }
 }
 
