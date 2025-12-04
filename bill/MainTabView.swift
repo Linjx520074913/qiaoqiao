@@ -513,119 +513,191 @@ struct BillCardView: View {
 
     var body: some View {
         ZStack {
+            // 主卡片内容
             VStack(spacing: 0) {
+                // 顶部渐变背景区域
                 VStack(spacing: 16) {
-                    // 顶部：图标和金额
-                    VStack(spacing: 12) {
+                    // 金额和图标
+                    HStack(spacing: 16) {
+                        // 左侧：分类图标
                         ZStack {
                             Circle()
                                 .fill(
                                     LinearGradient(
                                         gradient: Gradient(colors: [
-                                            bill.category.color.opacity(0.3),
-                                            bill.category.color.opacity(0.1)
+                                            bill.category.color.opacity(0.2),
+                                            bill.category.color.opacity(0.05)
                                         ]),
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
                                 )
-                                .frame(width: 70, height: 70)
+                                .frame(width: 56, height: 56)
 
                             Image(systemName: bill.icon)
-                                .font(.system(size: 32))
+                                .font(.system(size: 24, weight: .semibold))
                                 .foregroundColor(bill.category.color)
                         }
 
-                        // 优化的金额显示
-                        Text(String(format: "%@¥%.2f",
-                                  bill.amount >= 0 ? "+" : "",
-                                  abs(bill.amount)))
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(bill.amount >= 0 ? .green : .red)
+                        // 中间：商户名称和金额
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(bill.merchantName)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
 
-                        // 类型徽章
-                        HStack(spacing: 4) {
-                            Image(systemName: bill.type == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                                .font(.system(size: 10))
-                            Text(bill.type == .income ? "收入" : "支出")
-                                .font(.system(size: 12, weight: .medium))
-                        }
-                        .foregroundColor(bill.amount >= 0 ? .green : .red)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill((bill.amount >= 0 ? Color.green : Color.red).opacity(0.1))
-                        )
-                    }
-                    .padding(.top, 24)
+                            HStack(spacing: 6) {
+                                Text(String(format: "¥%.2f", abs(bill.amount)))
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .foregroundColor(bill.amount >= 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.26, green: 0.26, blue: 0.26))
 
-                    Divider()
-                        .padding(.horizontal, 16)
-
-                    // 详情
-                    VStack(spacing: 12) {
-                        BillDetailRow(icon: "building.2.fill", iconColor: .blue, title: "商户", value: bill.merchantName)
-
-                        if let description = bill.description, !description.isEmpty {
-                            BillDetailRow(icon: "doc.text.fill", iconColor: .orange, title: "备注", value: description)
+                                // 小型收入/支出标签
+                                Text(bill.type == .income ? "收入" : "支出")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(bill.amount >= 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color.secondary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(
+                                        Capsule()
+                                            .fill((bill.amount >= 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color.secondary).opacity(0.08))
+                                    )
+                            }
                         }
 
-                        BillDetailRow(icon: "tag.fill", iconColor: bill.category.color, title: "分类", value: bill.category.rawValue)
-
-                        BillDetailRow(icon: "calendar", iconColor: .purple, title: "时间", value: formatDateTime(bill.date))
+                        Spacer()
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+                    .padding(.top, 24)
+                    .padding(.bottom, 20)
+                }
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(white: 0.98),
+                            Color.white
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
 
-                    // 优化的操作按钮
-                    if !isBackground {
-                        HStack(spacing: 12) {
-                            // Outline风格删除按钮
-                            Button(action: onDelete) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                    Text("删除")
-                                        .font(.system(size: 14, weight: .semibold))
-                                }
-                                .foregroundColor(.red)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .stroke(Color.red.opacity(0.3), lineWidth: 1.5)
-                                        .background(Color.red.opacity(0.05))
-                                )
-                                .cornerRadius(14)
-                            }
-
-                            // 填充风格确认按钮
-                            Button(action: onConfirm) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                    Text("确认")
-                                        .font(.system(size: 14, weight: .semibold))
-                                }
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.green)
-                                .cornerRadius(14)
+                // 详情区域
+                VStack(spacing: 0) {
+                    // 分类和时间
+                    HStack(spacing: 24) {
+                        // 分类
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("分类")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(bill.category.color)
+                                    .frame(width: 8, height: 8)
+                                Text(bill.category.rawValue)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.primary)
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
+
+                        Divider()
+                            .frame(height: 32)
+
+                        // 时间
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("时间")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Text(formatDateTime(bill.date))
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.primary)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+
+                    // 备注（如果有）
+                    if let description = bill.description, !description.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Divider()
+                                .padding(.horizontal, 20)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("备注")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                Text(description)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.primary)
+                                    .lineLimit(2)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                        }
+                    }
+
+                    // 操作按钮区域
+                    if !isBackground {
+                        VStack(spacing: 0) {
+                            Divider()
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+
+                            HStack(spacing: 10) {
+                                // 跳过按钮
+                                Button(action: onDelete) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 15, weight: .semibold))
+                                        Text("跳过")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(Color(white: 0.96))
+                                    .cornerRadius(12)
+                                }
+
+                                // 确认按钮
+                                Button(action: onConfirm) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 15, weight: .semibold))
+                                        Text("确认添加")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.2, green: 0.78, blue: 0.35),
+                                                Color(red: 0.15, green: 0.68, blue: 0.30)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .cornerRadius(12)
+                                    .shadow(color: Color(red: 0.2, green: 0.78, blue: 0.35).opacity(0.3), radius: 8, x: 0, y: 4)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                        }
                     } else {
-                        Spacer().frame(height: 60)
+                        Spacer().frame(height: 82)
                     }
                 }
             }
             .background(Color.white)
-            .cornerRadius(20)
-            .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 15)
-            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 5)
+            .cornerRadius(24)
+            .shadow(color: .black.opacity(0.08), radius: 30, x: 0, y: 12)
+            .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 4)
 
             // 滑动视觉反馈覆盖层
             if !isBackground && swipeDirection != .none {
