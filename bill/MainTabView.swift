@@ -338,10 +338,19 @@ struct BillConfirmationOverlay: View {
     @EnvironmentObject var appState: AppState
     @State private var offset: CGFloat = 0
     @State private var rotation: Double = 0
+    @State private var showSuccessAnimation = false
 
     var currentBill: PendingBill? {
         guard appState.currentBillIndex < appState.pendingBills.count else { return nil }
         return appState.pendingBills[appState.currentBillIndex]
+    }
+
+    var totalBills: Int {
+        appState.pendingBills.count
+    }
+
+    var currentIndex: Int {
+        appState.currentBillIndex + 1
     }
 
     var body: some View {
@@ -357,26 +366,75 @@ struct BillConfirmationOverlay: View {
                     }
                 }
 
-            // 卡片
-            if let bill = currentBill {
-                BillCardView(
-                    bill: bill,
-                    offset: $offset,
-                    rotation: $rotation,
-                    onConfirm: {
-                        confirmCurrentBill()
-                    },
-                    onDelete: {
-                        deleteCurrentBill()
+            VStack(spacing: 16) {
+                // 进度指示器
+                if !appState.pendingBills.isEmpty {
+                    ProgressIndicator(current: currentIndex, total: totalBills)
+                        .padding(.top, 60)
+                }
+
+                // 卡片堆叠效果
+                ZStack {
+                    // 后面的卡片（最多显示2张）
+                    ForEach(0..<min(3, appState.pendingBills.count - appState.currentBillIndex), id: \.self) { index in
+                        if index > 0 {
+                            let billIndex = appState.currentBillIndex + index
+                            if billIndex < appState.pendingBills.count {
+                                BillCardView(
+                                    bill: appState.pendingBills[billIndex],
+                                    offset: .constant(0),
+                                    rotation: .constant(0),
+                                    dragValue: .constant(0),
+                                    isBackground: true,
+                                    onConfirm: {},
+                                    onDelete: {}
+                                )
+                                .frame(maxWidth: 340)
+                                .scaleEffect(1 - CGFloat(index) * 0.05)
+                                .offset(y: CGFloat(index) * 8)
+                                .opacity(1 - Double(index) * 0.3)
+                                .allowsHitTesting(false)
+                            }
+                        }
                     }
-                )
-                .frame(maxWidth: 340)
+
+                    // 当前卡片
+                    if let bill = currentBill {
+                        BillCardView(
+                            bill: bill,
+                            offset: $offset,
+                            rotation: $rotation,
+                            dragValue: $offset,
+                            isBackground: false,
+                            onConfirm: {
+                                confirmCurrentBill()
+                            },
+                            onDelete: {
+                                deleteCurrentBill()
+                            }
+                        )
+                        .frame(maxWidth: 340)
+                        .zIndex(1)
+                    }
+                }
+
+                Spacer()
+            }
+
+            // 成功动画
+            if showSuccessAnimation {
+                SuccessAnimationView()
+                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
 
     private func confirmCurrentBill() {
         guard let bill = currentBill else { return }
+
+        // 触觉反馈
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
 
         // 转换为Transaction并保存
         let transaction = Transaction(
@@ -394,10 +452,15 @@ struct BillConfirmationOverlay: View {
             appState.currentBillIndex += 1
         }
 
-        // 如果全部确认完毕,清空列表
+        // 如果全部处理完毕,显示成功动画
         if appState.currentBillIndex >= appState.pendingBills.count {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                showSuccessAnimation = true
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 withAnimation {
+                    showSuccessAnimation = false
                     appState.pendingBills.removeAll()
                     appState.currentBillIndex = 0
                 }
@@ -406,6 +469,10 @@ struct BillConfirmationOverlay: View {
     }
 
     private func deleteCurrentBill() {
+        // 触觉反馈
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.warning)
+
         // 移动到下一张
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             appState.currentBillIndex += 1
@@ -428,136 +495,192 @@ struct BillCardView: View {
     let bill: PendingBill
     @Binding var offset: CGFloat
     @Binding var rotation: Double
+    @Binding var dragValue: CGFloat
+    let isBackground: Bool
     let onConfirm: () -> Void
     let onDelete: () -> Void
 
+    // 滑动方向和透明度
+    private var swipeDirection: SwipeDirection {
+        if dragValue > 50 { return .right }
+        if dragValue < -50 { return .left }
+        return .none
+    }
+
+    private var overlayOpacity: Double {
+        min(abs(dragValue) / 120.0, 0.8)
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 16) {
-                // 顶部：图标和金额
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        bill.category.color.opacity(0.3),
-                                        bill.category.color.opacity(0.1)
-                                    ]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+        ZStack {
+            VStack(spacing: 0) {
+                VStack(spacing: 16) {
+                    // 顶部：图标和金额
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            bill.category.color.opacity(0.3),
+                                            bill.category.color.opacity(0.1)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
-                            .frame(width: 70, height: 70)
+                                .frame(width: 70, height: 70)
 
-                        Image(systemName: bill.icon)
-                            .font(.system(size: 32))
-                            .foregroundColor(bill.category.color)
-                    }
+                            Image(systemName: bill.icon)
+                                .font(.system(size: 32))
+                                .foregroundColor(bill.category.color)
+                        }
 
-                    Text(String(format: "%@¥%.2f",
-                              bill.amount >= 0 ? "+" : "",
-                              abs(bill.amount)))
-                        .font(.system(size: 36, weight: .bold))
+                        // 优化的金额显示
+                        Text(String(format: "%@¥%.2f",
+                                  bill.amount >= 0 ? "+" : "",
+                                  abs(bill.amount)))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(bill.amount >= 0 ? .green : .red)
+
+                        // 类型徽章
+                        HStack(spacing: 4) {
+                            Image(systemName: bill.type == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                                .font(.system(size: 10))
+                            Text(bill.type == .income ? "收入" : "支出")
+                                .font(.system(size: 12, weight: .medium))
+                        }
                         .foregroundColor(bill.amount >= 0 ? .green : .red)
-
-                    Text(bill.type == .income ? "收入" : "支出")
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
-                }
-                .padding(.top, 24)
-
-                Divider()
-                    .padding(.horizontal, 16)
-
-                // 详情
-                VStack(spacing: 12) {
-                    BillDetailRow(icon: "building.2.fill", iconColor: .blue, title: "商户", value: bill.merchantName)
-
-                    if let description = bill.description, !description.isEmpty {
-                        BillDetailRow(icon: "doc.text.fill", iconColor: .orange, title: "备注", value: description)
-                    }
-
-                    BillDetailRow(icon: "tag.fill", iconColor: bill.category.color, title: "分类", value: bill.category.rawValue)
-
-                    BillDetailRow(icon: "calendar", iconColor: .purple, title: "时间", value: formatDateTime(bill.date))
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
-
-                // 操作按钮
-                HStack(spacing: 12) {
-                    Button(action: onDelete) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("删除")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                        .foregroundColor(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(12)
-                    }
-
-                    Button(action: onConfirm) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("确认")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
                         .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.green, Color.green.opacity(0.8)]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                            Capsule()
+                                .fill((bill.amount >= 0 ? Color.green : Color.red).opacity(0.1))
                         )
-                        .cornerRadius(12)
+                    }
+                    .padding(.top, 24)
+
+                    Divider()
+                        .padding(.horizontal, 16)
+
+                    // 详情
+                    VStack(spacing: 12) {
+                        BillDetailRow(icon: "building.2.fill", iconColor: .blue, title: "商户", value: bill.merchantName)
+
+                        if let description = bill.description, !description.isEmpty {
+                            BillDetailRow(icon: "doc.text.fill", iconColor: .orange, title: "备注", value: description)
+                        }
+
+                        BillDetailRow(icon: "tag.fill", iconColor: bill.category.color, title: "分类", value: bill.category.rawValue)
+
+                        BillDetailRow(icon: "calendar", iconColor: .purple, title: "时间", value: formatDateTime(bill.date))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+
+                    // 优化的操作按钮
+                    if !isBackground {
+                        HStack(spacing: 12) {
+                            // Outline风格删除按钮
+                            Button(action: onDelete) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 14, weight: .semibold))
+                                    Text("删除")
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundColor(.red)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.red.opacity(0.3), lineWidth: 1.5)
+                                        .background(Color.red.opacity(0.05))
+                                )
+                                .cornerRadius(14)
+                            }
+
+                            // 填充风格确认按钮
+                            Button(action: onConfirm) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .semibold))
+                                    Text("确认")
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.green)
+                                .cornerRadius(14)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    } else {
+                        Spacer().frame(height: 60)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+            }
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 15)
+            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 5)
+
+            // 滑动视觉反馈覆盖层
+            if !isBackground && swipeDirection != .none {
+                SwipeOverlay(direction: swipeDirection)
+                    .opacity(overlayOpacity)
             }
         }
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: .black.opacity(0.25), radius: 30, x: 0, y: 10)
         .offset(x: offset)
         .rotationEffect(.degrees(rotation))
+        .opacity(isBackground ? 1.0 : (1.0 - abs(dragValue) / 500.0))
         .gesture(
-            DragGesture()
+            isBackground ? nil : DragGesture()
                 .onChanged { gesture in
                     offset = gesture.translation.width
                     rotation = Double(gesture.translation.width / 20)
+
+                    // 触觉反馈（达到阈值时）
+                    if abs(gesture.translation.width) > 120 && abs(dragValue) <= 120 {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                    }
                 }
                 .onEnded { gesture in
                     let threshold: CGFloat = 120
                     if gesture.translation.width > threshold {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                        // 确认 - 飞出动画
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             offset = 500
+                            rotation = 15
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                             offset = 0
                             rotation = 0
                             onConfirm()
                         }
                     } else if gesture.translation.width < -threshold {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                        // 删除 - 飞出动画
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.warning)
+
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             offset = -500
+                            rotation = -15
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                             offset = 0
                             rotation = 0
                             onDelete()
                         }
                     } else {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                        // 回弹动画
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                             offset = 0
                             rotation = 0
                         }
@@ -598,6 +721,111 @@ struct BillDetailRow: View {
                 .lineLimit(1)
 
             Spacer()
+        }
+    }
+}
+
+// MARK: - 进度指示器
+struct ProgressIndicator: View {
+    let current: Int
+    let total: Int
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // 数字指示
+            Text("\(current) / \(total)")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+
+            // 进度条
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // 背景
+                    Capsule()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(height: 4)
+
+                    // 进度
+                    Capsule()
+                        .fill(Color.white)
+                        .frame(width: geometry.size.width * CGFloat(current) / CGFloat(total), height: 4)
+                }
+            }
+            .frame(height: 4)
+        }
+        .padding(.horizontal, 40)
+        .frame(height: 30)
+    }
+}
+
+// MARK: - 滑动覆盖层
+enum SwipeDirection {
+    case left, right, none
+}
+
+struct SwipeOverlay: View {
+    let direction: SwipeDirection
+
+    var body: some View {
+        ZStack {
+            // 背景颜色
+            Rectangle()
+                .fill(direction == .right ? Color.green : Color.red)
+                .cornerRadius(20)
+
+            // 图标和文字
+            VStack(spacing: 8) {
+                Image(systemName: direction == .right ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(direction == .right ? "确认" : "删除")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        }
+    }
+}
+
+// MARK: - 成功动画
+struct SuccessAnimationView: View {
+    @State private var scale: CGFloat = 0.5
+    @State private var checkmarkScale: CGFloat = 0.5
+    @State private var opacity: Double = 0
+
+    var body: some View {
+        VStack(spacing: 20) {
+            ZStack {
+                // 背景圆圈
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 100, height: 100)
+                    .scaleEffect(scale)
+                    .opacity(opacity)
+
+                // 对勾
+                Image(systemName: "checkmark")
+                    .font(.system(size: 50, weight: .bold))
+                    .foregroundColor(.white)
+                    .scaleEffect(checkmarkScale)
+                    .opacity(opacity)
+            }
+
+            Text("已添加 ✓")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+                .opacity(opacity)
+        }
+        .onAppear {
+            // 弹性进入动画
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                scale = 1.0
+                opacity = 1.0
+            }
+
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1)) {
+                checkmarkScale = 1.0
+            }
         }
     }
 }
