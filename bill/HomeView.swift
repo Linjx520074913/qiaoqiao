@@ -61,21 +61,46 @@ struct HomeView: View {
 
     // MARK: - 视图组件
 
-    // 横向滚动卡片视图
-    private var horizontalCardsView: some View {
-        TabView {
-            // 卡片1: 今日支出 + 预算（合并）
-            todayExpenseAndBudgetCard
-                .padding(.horizontal, 20)
+    // 横向滚动卡片视图（禁用手势滑动，只能点击指示器切换）
+    @State private var selectedCardIndex = 0
 
-            // 卡片2: 本月收入支出
-            monthlyIncomeExpenseCard
-                .padding(.horizontal, 20)
+    private var horizontalCardsView: some View {
+        VStack(spacing: 12) {
+            // 卡片显示区域 - 使用高优先级手势覆盖来禁用滑动
+            TabView(selection: $selectedCardIndex) {
+                // 卡片1: 今日支出 + 预算（合并）
+                todayExpenseAndBudgetCard
+                    .padding(.horizontal, 20)
+                    .tag(0)
+
+                // 卡片2: 本月收入支出
+                monthlyIncomeExpenseCard
+                    .padding(.horizontal, 20)
+                    .tag(1)
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .frame(height: 220)
+            .highPriorityGesture(
+                DragGesture()
+                    .onChanged { _ in }
+                    .onEnded { _ in }
+            )
+
+            // 自定义页面指示器
+            HStack(spacing: 8) {
+                ForEach(0..<2) { index in
+                    Circle()
+                        .fill(selectedCardIndex == index ? Color(red: 0.35, green: 0.45, blue: 0.95) : Color.gray.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                selectedCardIndex = index
+                            }
+                        }
+                }
+            }
+            .padding(.top, 4)
         }
-        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
-        .frame(height: 220)
-        .listRowInsets(EdgeInsets())
-        .listRowBackground(Color.clear)
     }
 
     // 今日支出 + 预算 合并卡片 - 专业iOS设计
@@ -729,7 +754,7 @@ struct HomeView: View {
                     // 该日期的交易列表
                     VStack(spacing: 0) {
                         ForEach(group.value) { transaction in
-                            TransactionRow(
+                            SwipeableTransactionRow(
                                 transaction: transaction,
                                 onDelete: {
                                     deleteTransaction(transaction)
@@ -1254,7 +1279,149 @@ struct AccountCardView: View {
 }
 
 
-// 交易行视图
+// 可滑动的交易行视图（支持右滑删除）
+struct SwipeableTransactionRow: View {
+    let transaction: Transaction
+    var onDelete: (() -> Void)? = nil
+    @State private var offset: CGFloat = 0
+    @State private var showDetail = false
+
+    private let deleteButtonWidth: CGFloat = 80
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            // 删除按钮背景
+            Rectangle()
+                .fill(Color.red)
+                .frame(width: deleteButtonWidth)
+                .overlay(
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            onDelete?()
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                            Text("删除")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundColor(.white)
+                        .frame(width: deleteButtonWidth)
+                    }
+                )
+
+            // 交易内容
+            TransactionRowContent(transaction: transaction, showDetail: $showDetail)
+                .background(Color.white)
+                .offset(x: offset)
+                .highPriorityGesture(
+                    DragGesture(minimumDistance: 10)
+                        .onChanged { value in
+                            // 只允许向左滑动
+                            if value.translation.width < 0 {
+                                offset = value.translation.width
+                            } else if offset < 0 {
+                                // 如果已经滑出，允许向右滑回去
+                                offset = min(0, offset + value.translation.width)
+                            }
+                        }
+                        .onEnded { value in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                if value.translation.width < -50 {
+                                    // 滑动超过50，显示删除按钮
+                                    offset = -deleteButtonWidth
+                                } else {
+                                    // 滑回原位
+                                    offset = 0
+                                }
+                            }
+                        }
+                )
+                .onTapGesture {
+                    if offset < 0 {
+                        // 如果已滑出，点击收回
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            offset = 0
+                        }
+                    }
+                }
+        }
+        .sheet(isPresented: $showDetail) {
+            TransactionDetailView(transaction: transaction)
+        }
+    }
+}
+
+// 交易行内容视图
+struct TransactionRowContent: View {
+    let transaction: Transaction
+    @Binding var showDetail: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // 分类图标
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(transaction.category.color.opacity(0.12))
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: transaction.category.icon)
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(transaction.category.color)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(transaction.merchantName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+
+                HStack(spacing: 4) {
+                    Text(transaction.category.rawValue)
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+
+                    if !transaction.description.isEmpty && transaction.description != "无备注" {
+                        Text("·")
+                            .foregroundColor(.gray.opacity(0.5))
+                            .font(.system(size: 12))
+
+                        Text(transaction.description)
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                }
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 6) {
+                Text(String(format: "%@¥%.2f", transaction.amount >= 0 ? "+" : "-", abs(transaction.amount)))
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(transaction.amount >= 0 ? .green : .primary)
+
+                Text(formatTime(transaction.date))
+                    .font(.system(size: 11))
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showDetail = true
+        }
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
+// 交易行视图（保留原有的长按删除功能）
 struct TransactionRow: View {
     let transaction: Transaction
     var onDelete: (() -> Void)? = nil
