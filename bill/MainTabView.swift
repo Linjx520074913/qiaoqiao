@@ -767,23 +767,41 @@ struct SwipeOverlay: View {
     let direction: SwipeDirection
 
     var body: some View {
-        ZStack {
-            // 背景颜色
-            Rectangle()
-                .fill(direction == .right ? Color.green : Color.red)
-                .cornerRadius(20)
+        // 只在两侧显示图标，不是全屏覆盖
+        HStack {
+            if direction == .left {
+                Spacer()
+                // 左侧删除图标
+                VStack(spacing: 4) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 60, weight: .bold))
+                        .foregroundColor(.red)
+                        .shadow(color: .red.opacity(0.3), radius: 10)
 
-            // 图标和文字
-            VStack(spacing: 8) {
-                Image(systemName: direction == .right ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(.white)
+                    Text("删除")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.red)
+                }
+                .padding(.trailing, 40)
+            }
 
-                Text(direction == .right ? "确认" : "删除")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
+            if direction == .right {
+                // 右侧确认图标
+                VStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 60, weight: .bold))
+                        .foregroundColor(.green)
+                        .shadow(color: .green.opacity(0.3), radius: 10)
+
+                    Text("确认")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.green)
+                }
+                .padding(.leading, 40)
+                Spacer()
             }
         }
+        .allowsHitTesting(false)
     }
 }
 
