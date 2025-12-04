@@ -13,23 +13,56 @@ enum TransactionType: String, Codable {
     case expense = "expense"
 }
 
-// 交易分类
+// 记账分类
 enum TransactionCategory: String, Codable, CaseIterable {
-    case food = "食物"
-    case bills = "账单"
-    case entertainment = "小玩意"
+    case food = "餐饮"
+    case shopping = "购物"
+    case transport = "交通"
+    case entertainment = "娱乐"
+    case housing = "住房"
+    case healthcare = "医疗"
+    case education = "教育"
     case other = "其他"
 
     var color: Color {
         switch self {
         case .food:
+            return .orange
+        case .shopping:
             return .blue
-        case .bills:
-            return .purple
+        case .transport:
+            return .green
         case .entertainment:
-            return .gray
+            return .purple
+        case .housing:
+            return .red
+        case .healthcare:
+            return .pink
+        case .education:
+            return .cyan
         case .other:
-            return .black
+            return .gray
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .food:
+            return "fork.knife"
+        case .shopping:
+            return "cart.fill"
+        case .transport:
+            return "car.fill"
+        case .entertainment:
+            return "gamecontroller.fill"
+        case .housing:
+            return "house.fill"
+        case .healthcare:
+            return "heart.fill"
+        case .education:
+            return "book.fill"
+        case .other:
+            return "ellipsis.circle.fill"
         }
     }
 }
@@ -64,23 +97,23 @@ struct Transaction: Identifiable, Codable {
     }
 }
 
-// 银行卡
-struct BankCard: Identifiable {
+// 账户/账本
+struct Account: Identifiable {
     let id: String
     let name: String
     let balance: Double
-    let lastFourDigits: String
+    let accountType: String // 现金、银行卡、支付宝、微信等
     let backgroundColor: [Color]
 
     init(id: String = UUID().uuidString,
          name: String,
          balance: Double,
-         lastFourDigits: String,
+         accountType: String = "银行卡",
          backgroundColor: [Color]) {
         self.id = id
         self.name = name
         self.balance = balance
-        self.lastFourDigits = lastFourDigits
+        self.accountType = accountType
         self.backgroundColor = backgroundColor
     }
 }
@@ -88,33 +121,27 @@ struct BankCard: Identifiable {
 // 用户信息
 struct UserProfile {
     var name: String
-    var memberLevel: String
-    var phoneNumber: String
-    var language: String
     var avatarImage: String
-    var totalProfit: Double
-    var totalExpense: Double
-    var monthlyBudget: Double
-    var monthlySpent: Double
+    var totalIncome: Double      // 总收入
+    var totalExpense: Double     // 总支出
+    var monthlyBudget: Double    // 月度预算
+    var monthlySpent: Double     // 本月已花费
+    var autoRecordEnabled: Bool  // 是否启用自动记账
 
-    init(name: String = "丹尼尔·特拉维斯",
-         memberLevel: String = "会员会 👑",
-         phoneNumber: String = "0812 345 6789",
-         language: String = "印度尼西亚语",
+    init(name: String = "记账用户",
          avatarImage: String = "person.circle.fill",
-         totalProfit: Double = 4500,
-         totalExpense: Double = 1691,
-         monthlyBudget: Double = 124,
-         monthlySpent: Double = 124) {
+         totalIncome: Double = 8500,
+         totalExpense: Double = 3240,
+         monthlyBudget: Double = 5000,
+         monthlySpent: Double = 1240,
+         autoRecordEnabled: Bool = true) {
         self.name = name
-        self.memberLevel = memberLevel
-        self.phoneNumber = phoneNumber
-        self.language = language
         self.avatarImage = avatarImage
-        self.totalProfit = totalProfit
+        self.totalIncome = totalIncome
         self.totalExpense = totalExpense
         self.monthlyBudget = monthlyBudget
         self.monthlySpent = monthlySpent
+        self.autoRecordEnabled = autoRecordEnabled
     }
 }
 

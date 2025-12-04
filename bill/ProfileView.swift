@@ -48,49 +48,42 @@ struct ProfileView: View {
 
                     // 用户信息卡片
                     VStack(spacing: 20) {
-                        // 姓名
+                        // 用户名
                         ProfileInfoRow(
                             icon: "person.fill",
                             iconColor: .blue,
                             title: userProfile.name,
-                            showArrow: false
-                        )
-
-                        // 电话
-                        ProfileInfoRow(
-                            icon: "phone.fill",
-                            iconColor: .blue,
-                            title: userProfile.phoneNumber,
-                            showArrow: false
-                        )
-
-                        // 密码
-                        ProfileInfoRow(
-                            icon: "lock.fill",
-                            iconColor: .blue,
-                            title: "• • • • • • •",
                             showArrow: false,
                             trailing: {
                                 Button(action: {}) {
-                                    Image(systemName: "eye.slash.fill")
-                                        .foregroundColor(.gray)
-                                }
-                            }
-                        )
-
-                        // 语言
-                        ProfileInfoRow(
-                            icon: "flag.fill",
-                            iconColor: .red,
-                            title: userProfile.language,
-                            showArrow: false,
-                            trailing: {
-                                Button(action: {}) {
-                                    Text("改变")
-                                        .font(.system(size: 14))
+                                    Image(systemName: "pencil")
                                         .foregroundColor(.blue)
                                 }
                             }
+                        )
+
+                        // 账本类型
+                        ProfileInfoRow(
+                            icon: "book.fill",
+                            iconColor: .orange,
+                            title: "个人账本",
+                            showArrow: true
+                        )
+
+                        // 记账提醒
+                        ProfileInfoRow(
+                            icon: "bell.fill",
+                            iconColor: .red,
+                            title: "每日记账提醒",
+                            showArrow: true
+                        )
+
+                        // 数据备份
+                        ProfileInfoRow(
+                            icon: "icloud.fill",
+                            iconColor: .cyan,
+                            title: "iCloud 同步",
+                            showArrow: true
                         )
                     }
                     .padding()
@@ -99,20 +92,20 @@ struct ProfileView: View {
                     .shadow(color: .gray.opacity(0.1), radius: 10)
                     .padding(.horizontal)
 
-                    // 概览卡片
+                    // 财务概览卡片
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("概览")
+                        Text("财务概览")
                             .font(.system(size: 16, weight: .bold))
                             .padding(.horizontal)
 
                         VStack(spacing: 0) {
-                            // 净利润和费用
+                            // 总收入和总支出
                             HStack(spacing: 0) {
                                 OverviewCard(
                                     icon: "arrow.down.circle.fill",
-                                    iconColor: .blue,
-                                    title: "净利润",
-                                    amount: userProfile.totalProfit
+                                    iconColor: .green,
+                                    title: "总收入",
+                                    amount: userProfile.totalIncome
                                 )
 
                                 Divider()
@@ -120,8 +113,8 @@ struct ProfileView: View {
 
                                 OverviewCard(
                                     icon: "arrow.up.circle.fill",
-                                    iconColor: .blue,
-                                    title: "费用",
+                                    iconColor: .red,
+                                    title: "总支出",
                                     amount: userProfile.totalExpense
                                 )
                             }
@@ -131,21 +124,33 @@ struct ProfileView: View {
 
                             // 本月预算进度
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("度过这个星期")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
+                                HStack {
+                                    Text("本月预算")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                    Text("已用 \(Int(userProfile.monthlySpent / userProfile.monthlyBudget * 100))%")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.orange)
+                                }
 
                                 HStack {
                                     ProgressView(value: userProfile.monthlySpent, total: userProfile.monthlyBudget)
                                         .tint(.blue)
 
-                                    Text("\(Int(userProfile.monthlySpent))元")
+                                    Text("¥\(Int(userProfile.monthlySpent))")
                                         .font(.system(size: 14, weight: .medium))
                                 }
 
-                                Text("\(Int(userProfile.monthlySpent)) 元待消费")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.gray)
+                                HStack {
+                                    Text("预算: ¥\(Int(userProfile.monthlyBudget))")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                    Text("剩余: ¥\(Int(userProfile.monthlyBudget - userProfile.monthlySpent))")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.green)
+                                }
                             }
                             .padding()
                         }
@@ -154,12 +159,12 @@ struct ProfileView: View {
                         .shadow(color: .gray.opacity(0.1), radius: 10)
                         .padding(.horizontal)
 
-                        // 邀请卡片
-                        InvitationCard()
+                        // 自动记账功能卡片
+                        AutoRecordCard()
                             .padding(.horizontal)
 
-                        // 加入信息
-                        Text("您于 2021年9月加入 Finpay。自那时起已过去 1 个月，我们的硬命运日，帮助您更好地管理财务。")
+                        // 使用说明
+                        Text("自动记账功能可以智能识别您的支付记录，自动分类并记录到账本中，让记账变得轻松便捷。")
                             .font(.system(size: 12))
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
@@ -168,7 +173,7 @@ struct ProfileView: View {
                 }
                 .padding(.top)
             }
-            .navigationTitle("我的账户")
+            .navigationTitle("我的账本")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -262,30 +267,39 @@ struct OverviewCard: View {
     }
 }
 
-// 邀请卡片
-struct InvitationCard: View {
+// 自动记账功能卡片
+struct AutoRecordCard: View {
+    @State private var isAutoRecordEnabled = true
+
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: "person.2.circle.fill")
+            Image(systemName: "sparkles")
                 .font(.system(size: 40))
                 .foregroundColor(.white)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("有任何问题要问Finpay吗？")
+                Text("智能自动记账")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
-                Text("我们的客服团队全天候待命，随时为您提供帮助！")
+                Text("自动识别支付记录，智能分类记账")
                     .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.9))
             }
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .foregroundColor(.white)
+            Toggle("", isOn: $isAutoRecordEnabled)
+                .labelsHidden()
+                .tint(.green)
         }
         .padding()
-        .background(Color.black)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.blue, Color.purple]),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
         .cornerRadius(16)
     }
 }

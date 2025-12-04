@@ -11,33 +11,34 @@ struct StatisticsView: View {
     @State private var selectedPeriod = 0
     let periods = ["周", "月份", "年"]
 
-    @State private var totalSpent: Double = 691.54
+    @State private var totalSpent: Double = 1240.50
     @State private var categoryData: [CategorySpending] = [
-        CategorySpending(category: .food, amount: 250, percentage: 36),
-        CategorySpending(category: .bills, amount: 180, percentage: 26),
-        CategorySpending(category: .entertainment, amount: 150, percentage: 22),
-        CategorySpending(category: .other, amount: 111.54, percentage: 16)
+        CategorySpending(category: .food, amount: 480, percentage: 39),
+        CategorySpending(category: .transport, amount: 280, percentage: 23),
+        CategorySpending(category: .shopping, amount: 250, percentage: 20),
+        CategorySpending(category: .entertainment, amount: 150, percentage: 12),
+        CategorySpending(category: .other, amount: 80.50, percentage: 6)
     ]
 
     @State private var transactions: [Transaction] = [
-        Transaction(merchantName: "苹果商店",
-                   description: "iPhone 12 保护壳",
-                   amount: -120.90,
-                   type: .expense,
-                   category: .other,
-                   icon: "applelogo"),
-        Transaction(merchantName: "伊利亚",
-                   description: "iPhone 12 保护壳",
-                   amount: -120.90,
+        Transaction(merchantName: "星巴克",
+                   description: "早餐咖啡",
+                   amount: -35.00,
                    type: .expense,
                    category: .food,
-                   icon: "e.circle.fill"),
-        Transaction(merchantName: "伊利亚",
-                   description: "iPhone 12 保护壳",
-                   amount: -120.90,
+                   icon: "cup.and.saucer.fill"),
+        Transaction(merchantName: "地铁出行",
+                   description: "上班通勤",
+                   amount: -6.00,
                    type: .expense,
-                   category: .food,
-                   icon: "e.circle.fill")
+                   category: .transport,
+                   icon: "tram.fill"),
+        Transaction(merchantName: "超市购物",
+                   description: "日用品采购",
+                   amount: -128.50,
+                   type: .expense,
+                   category: .shopping,
+                   icon: "cart.fill")
     ]
 
     struct CategorySpending: Identifiable {
@@ -108,7 +109,7 @@ struct StatisticsView: View {
                     // 交易列表
                     VStack(spacing: 0) {
                         HStack {
-                            Text("交易")
+                            Text("支出明细")
                                 .font(.system(size: 18, weight: .bold))
                             Spacer()
                             Button(action: {}) {
@@ -126,12 +127,18 @@ struct StatisticsView: View {
                 }
                 .padding(.top)
             }
-            .navigationTitle("统计数据")
+            .navigationTitle("账单统计")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {}) {
                         Image(systemName: "chevron.left")
+                            .foregroundColor(.primary)
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {}) {
+                        Image(systemName: "slider.horizontal.3")
                             .foregroundColor(.primary)
                     }
                 }

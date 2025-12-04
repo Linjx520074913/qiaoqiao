@@ -97,8 +97,8 @@ struct CustomTabBar: View {
     private func tabIcon(for index: Int) -> String {
         switch index {
         case 0: return "house.fill"
-        case 1: return "chart.bar.fill"
-        case 3: return "creditcard.fill"
+        case 1: return "chart.pie.fill"
+        case 3: return "book.fill"
         case 4: return "person.fill"
         default: return ""
         }
@@ -106,10 +106,10 @@ struct CustomTabBar: View {
 
     private func tabTitle(for index: Int) -> String {
         switch index {
-        case 0: return "家"
-        case 1: return "统计数据"
-        case 3: return "卡片"
-        case 4: return "个人资料"
+        case 0: return "记账"
+        case 1: return "统计"
+        case 3: return "账本"
+        case 4: return "我的"
         default: return ""
         }
     }
