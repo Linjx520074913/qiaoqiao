@@ -231,7 +231,7 @@ struct HomeView: View {
             MonthlyFinanceCard(
                 income: appState.monthlyIncome,
                 expense: appState.monthlyExpense,
-                budget: 5000.0 // 暂时硬编码预算值
+                budget: appState.monthlyBudget
             )
         }
     }
@@ -977,6 +977,7 @@ struct BudgetProgressCard: View {
     let budgetUsagePercent: Double
     let remainingBudget: Double
     @EnvironmentObject var appState: AppState
+    @State private var isShowingBudgetEditor = false
 
     var body: some View {
         HStack(spacing: 24) {
@@ -1029,6 +1030,17 @@ struct BudgetProgressCard: View {
                         .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
                     Text("本月预算")
                         .font(.system(size: 16, weight: .semibold))
+
+                    Spacer()
+
+                    // 编辑按钮
+                    Button(action: {
+                        isShowingBudgetEditor = true
+                    }) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.6))
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -1069,6 +1081,227 @@ struct BudgetProgressCard: View {
         .background(Color.white)
         .cornerRadius(20)
         .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        .sheet(isPresented: $isShowingBudgetEditor) {
+            BudgetEditorView()
+                .environmentObject(appState)
+        }
+    }
+}
+
+// MARK: - 预算编辑器
+struct BudgetEditorView: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) var dismiss
+    @State private var budgetInput: String = ""
+    @State private var selectedPreset: Double?
+
+    // 预设预算选项
+    let presetBudgets: [Double] = [3000, 5000, 8000, 10000, 15000, 20000]
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // 当前预算显示
+                    VStack(spacing: 12) {
+                        Text("当前预算")
+                            .font(.system(size: 15))
+                            .foregroundColor(.secondary)
+
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("¥")
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                            Text(String(format: "%.0f", appState.monthlyBudget))
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 30)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.1),
+                                Color(red: 0.45, green: 0.55, blue: 1.0).opacity(0.05)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(20)
+
+                    // 预设预算选项
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("快速选择")
+                            .font(.system(size: 17, weight: .semibold))
+                            .padding(.horizontal, 4)
+
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 12) {
+                            ForEach(presetBudgets, id: \.self) { preset in
+                                Button(action: {
+                                    selectedPreset = preset
+                                    budgetInput = String(format: "%.0f", preset)
+                                }) {
+                                    VStack(spacing: 8) {
+                                        Text("¥\(Int(preset))")
+                                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                                            .foregroundColor(selectedPreset == preset ? .white : Color(red: 0.35, green: 0.45, blue: 0.95))
+
+                                        Text(budgetLabel(for: preset))
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(selectedPreset == preset ? .white.opacity(0.9) : .secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        selectedPreset == preset ?
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.35, green: 0.45, blue: 0.95),
+                                                Color(red: 0.45, green: 0.55, blue: 1.0)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ) :
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.96, green: 0.96, blue: 0.98),
+                                                Color(red: 0.96, green: 0.96, blue: 0.98)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .cornerRadius(16)
+                                    .shadow(color: selectedPreset == preset ? Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.3) : .black.opacity(0.03), radius: selectedPreset == preset ? 10 : 4, x: 0, y: selectedPreset == preset ? 4 : 2)
+                                }
+                            }
+                        }
+                    }
+
+                    // 自定义输入
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("自定义金额")
+                            .font(.system(size: 17, weight: .semibold))
+                            .padding(.horizontal, 4)
+
+                        HStack(spacing: 12) {
+                            Text("¥")
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+
+                            TextField("输入预算金额", text: $budgetInput)
+                                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                .keyboardType(.decimalPad)
+                                .onChange(of: budgetInput) { _ in
+                                    selectedPreset = nil
+                                }
+                        }
+                        .padding(20)
+                        .background(Color(red: 0.96, green: 0.96, blue: 0.98))
+                        .cornerRadius(16)
+                    }
+
+                    // 预算建议
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "lightbulb.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color.orange)
+                            Text("预算建议")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            BudgetTipRow(icon: "chart.line.uptrend.xyaxis", text: "建议预算为月收入的60-70%")
+                            BudgetTipRow(icon: "calendar", text: "可根据每月实际支出调整")
+                            BudgetTipRow(icon: "bell.badge", text: "超过90%时会收到提醒")
+                        }
+                    }
+                    .padding(20)
+                    .background(Color.orange.opacity(0.05))
+                    .cornerRadius(16)
+                }
+                .padding(20)
+            }
+            .background(Color(red: 0.97, green: 0.97, blue: 0.98))
+            .navigationTitle("设置预算")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        saveBudget()
+                    }
+                    .fontWeight(.semibold)
+                    .disabled(!isValidInput)
+                }
+            }
+        }
+        .onAppear {
+            budgetInput = String(format: "%.0f", appState.monthlyBudget)
+            if presetBudgets.contains(appState.monthlyBudget) {
+                selectedPreset = appState.monthlyBudget
+            }
+        }
+    }
+
+    private var isValidInput: Bool {
+        guard let value = Double(budgetInput), value > 0 else {
+            return false
+        }
+        return true
+    }
+
+    private func saveBudget() {
+        if let value = Double(budgetInput), value > 0 {
+            appState.monthlyBudget = value
+            dismiss()
+
+            // 触觉反馈
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+        }
+    }
+
+    private func budgetLabel(for amount: Double) -> String {
+        switch amount {
+        case 3000: return "节约型"
+        case 5000: return "标准型"
+        case 8000: return "舒适型"
+        case 10000: return "宽松型"
+        case 15000: return "充裕型"
+        case 20000: return "自由型"
+        default: return ""
+        }
+    }
+}
+
+// MARK: - 预算建议行
+struct BudgetTipRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+                .frame(width: 20)
+            Text(text)
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
+        }
     }
 }
 
