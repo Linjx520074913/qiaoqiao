@@ -77,6 +77,7 @@ struct Transaction: Identifiable, Codable {
     let type: TransactionType
     let category: TransactionCategory
     let icon: String
+    let imageData: Data? // 账单图片附件
 
     init(id: String = UUID().uuidString,
          merchantName: String,
@@ -85,7 +86,8 @@ struct Transaction: Identifiable, Codable {
          date: Date = Date(),
          type: TransactionType,
          category: TransactionCategory,
-         icon: String = "applelogo") {
+         icon: String = "applelogo",
+         imageData: Data? = nil) {
         self.id = id
         self.merchantName = merchantName
         self.description = description
@@ -94,6 +96,7 @@ struct Transaction: Identifiable, Codable {
         self.type = type
         self.category = category
         self.icon = icon
+        self.imageData = imageData
     }
 }
 

@@ -20,6 +20,11 @@ struct TransactionDetailView: View {
                     // 金额展示卡片
                     amountCard
 
+                    // 图片附件（如果有）
+                    if transaction.imageData != nil {
+                        imageAttachmentSection
+                    }
+
                     // 详细信息
                     detailsSection
 
@@ -45,6 +50,38 @@ struct TransactionDetailView: View {
         } message: {
             Text("确定要删除这笔账单吗？此操作无法撤销。")
         }
+    }
+
+    // MARK: - 图片附件
+    private var imageAttachmentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "photo.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.blue)
+                Text("账单图片")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+
+            if let imageData = transaction.imageData,
+               let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 10)
+        .padding(.horizontal, 20)
     }
 
     // MARK: - 金额展示卡片

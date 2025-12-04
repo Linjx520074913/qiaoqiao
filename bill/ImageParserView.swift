@@ -318,6 +318,9 @@ struct ImageParserView: View {
 
                 // 将识别结果转换为待确认账单并存入AppState
                 if !self.parsedMultipleBills.isEmpty {
+                    // 获取图片数据
+                    let imageData = self.selectedImage?.jpegData(compressionQuality: 0.7)
+
                     let pendingBills = self.parsedMultipleBills.map { billInfo in
                         PendingBill(
                             merchantName: billInfo.merchantName,
@@ -326,7 +329,8 @@ struct ImageParserView: View {
                             category: billInfo.category,
                             description: billInfo.description,
                             date: billInfo.date,
-                            icon: billInfo.category.icon
+                            icon: billInfo.category.icon,
+                            imageData: imageData
                         )
                     }
                     self.appState.pendingBills = pendingBills

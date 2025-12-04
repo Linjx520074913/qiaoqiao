@@ -118,6 +118,7 @@ struct PendingBill: Identifiable {
     let description: String?
     let date: Date
     let icon: String
+    let imageData: Data? // 账单图片附件
 }
 
 // MARK: - App State

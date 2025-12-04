@@ -528,7 +528,7 @@ struct BillConfirmationOverlay: View {
     private func confirmCurrentBill() {
         guard let bill = currentBill else { return }
 
-        // 转换为Transaction
+        // 转换为Transaction（包含图片附件）
         let transaction = Transaction(
             merchantName: bill.merchantName,
             description: bill.description ?? "无备注",
@@ -536,7 +536,8 @@ struct BillConfirmationOverlay: View {
             date: bill.date,
             type: bill.type,
             category: bill.category,
-            icon: bill.icon
+            icon: bill.icon,
+            imageData: bill.imageData
         )
 
         // 检查是否重复
@@ -1109,7 +1110,9 @@ class BackgroundOCRProcessor {
             return
         }
 
-        debugCallback?("📸 CGImage 准备完成,开始Vision识别")
+        // 将图片转换为Data以便保存
+        let imageData = image.jpegData(compressionQuality: 0.7)
+        debugCallback?("📸 CGImage 准备完成,图片大小: \(imageData?.count ?? 0) bytes, 开始Vision识别")
 
         let request = VNRecognizeTextRequest { [weak self] request, error in
             guard let self = self else { return }
@@ -1135,8 +1138,8 @@ class BackgroundOCRProcessor {
             let text = recognizedStrings.joined(separator: "\n")
             self.debugCallback?("📝 识别文字(\(text.count)字符):\n\(text)")
 
-            // 解析账单
-            let pendingBills = self.parseBillsFromText(text)
+            // 解析账单（传入图片数据）
+            let pendingBills = self.parseBillsFromText(text, imageData: imageData)
             self.debugCallback?("📊 解析结果: \(pendingBills.count) 条账单")
 
             for (i, bill) in pendingBills.enumerated() {
@@ -1186,7 +1189,7 @@ class BackgroundOCRProcessor {
     }
 
     // 完整的账单解析逻辑（从ImageParserView复制）
-    private func parseBillsFromText(_ text: String) -> [PendingBill] {
+    private func parseBillsFromText(_ text: String, imageData: Data?) -> [PendingBill] {
         var bills: [PendingBill] = []
         let lines = text.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
 
@@ -1261,7 +1264,8 @@ class BackgroundOCRProcessor {
                     category: category,
                     description: "第\(bills.count + 1)笔交易",
                     date: Date(),
-                    icon: category.icon
+                    icon: category.icon,
+                    imageData: imageData
                 ))
             }
         } else if foundAmounts.count == 1 {
@@ -1279,7 +1283,8 @@ class BackgroundOCRProcessor {
                     category: category,
                     description: "通过图像识别",
                     date: Date(),
-                    icon: category.icon
+                    icon: category.icon,
+                    imageData: imageData
                 ))
             }
         }
