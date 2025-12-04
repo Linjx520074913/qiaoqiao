@@ -311,25 +311,122 @@ struct HomeView: View {
 
     // 交易列表内容
     private var transactionListContent: some View {
-        VStack(spacing: 0) {
-            ForEach(transactions.prefix(10)) { transaction in
-                TransactionRow(
-                    transaction: transaction,
-                    onDelete: {
-                        deleteTransaction(transaction)
-                    }
-                )
+        VStack(spacing: 16) {
+            ForEach(groupedTransactions, id: \.key) { group in
+                VStack(alignment: .leading, spacing: 12) {
+                    // 日期标题
+                    HStack(spacing: 6) {
+                        Image(systemName: dateIcon(for: group.key))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
 
-                if transaction.id != transactions.prefix(10).last?.id {
-                    Divider()
-                        .padding(.leading, 70)
+                        Text(group.key)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+
+                        Spacer()
+
+                        // 当日小计
+                        let dayTotal = group.value.filter { $0.amount < 0 }.reduce(0) { $0 + abs($1.amount) }
+                        if dayTotal > 0 {
+                            Text(String(format: "支出 ¥%.2f", dayTotal))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+
+                    // 该日期的交易列表
+                    VStack(spacing: 0) {
+                        ForEach(group.value) { transaction in
+                            TransactionRow(
+                                transaction: transaction,
+                                onDelete: {
+                                    deleteTransaction(transaction)
+                                }
+                            )
+
+                            if transaction.id != group.value.last?.id {
+                                Divider()
+                                    .padding(.leading, 70)
+                            }
+                        }
+                    }
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: .black.opacity(0.03), radius: 8, x: 0, y: 2)
+                    .padding(.horizontal, 20)
                 }
             }
         }
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.03), radius: 8, x: 0, y: 2)
-        .padding(.horizontal, 20)
+    }
+
+    // 分组交易记录
+    private var groupedTransactions: [(key: String, value: [Transaction])] {
+        let calendar = Calendar.current
+        let now = Date()
+
+        var groups: [String: [Transaction]] = [:]
+
+        for transaction in transactions.prefix(10) {
+            let dateKey: String
+
+            if calendar.isDateInToday(transaction.date) {
+                dateKey = "今天"
+            } else if calendar.isDateInYesterday(transaction.date) {
+                dateKey = "昨天"
+            } else if calendar.isDate(transaction.date, equalTo: now, toGranularity: .weekOfYear) {
+                // 本周内的日期显示"星期X"
+                let weekday = calendar.component(.weekday, from: transaction.date)
+                let weekdayNames = ["", "星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
+                dateKey = weekdayNames[weekday]
+            } else {
+                // 更早的日期显示"MM月DD日"
+                let month = calendar.component(.month, from: transaction.date)
+                let day = calendar.component(.day, from: transaction.date)
+                dateKey = String(format: "%d月%d日", month, day)
+            }
+
+            if groups[dateKey] == nil {
+                groups[dateKey] = []
+            }
+            groups[dateKey]?.append(transaction)
+        }
+
+        // 按日期排序（今天 > 昨天 > 其他）
+        let sortedKeys = groups.keys.sorted { key1, key2 in
+            let priority1 = datePriority(for: key1)
+            let priority2 = datePriority(for: key2)
+
+            if priority1 != priority2 {
+                return priority1 < priority2
+            }
+
+            // 如果优先级相同，按日期字符串排序（用于"更早"的日期）
+            return key1 > key2
+        }
+
+        return sortedKeys.map { ($0, groups[$0]!) }
+    }
+
+    // 日期优先级（数字越小越靠前）
+    private func datePriority(for dateKey: String) -> Int {
+        switch dateKey {
+        case "今天": return 0
+        case "昨天": return 1
+        case let key where key.hasPrefix("星期"): return 2
+        default: return 3
+        }
+    }
+
+    // 日期图标
+    private func dateIcon(for dateKey: String) -> String {
+        switch dateKey {
+        case "今天": return "calendar.badge.clock"
+        case "昨天": return "clock.arrow.circlepath"
+        default: return "calendar"
+        }
     }
 
     // 悬浮添加按钮
