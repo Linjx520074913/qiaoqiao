@@ -980,107 +980,109 @@ struct BudgetProgressCard: View {
     @State private var isShowingBudgetEditor = false
 
     var body: some View {
-        HStack(spacing: 24) {
-            // 左侧圆形进度环
-            ZStack {
-                // 背景圆环
-                Circle()
-                    .stroke(
-                        Color(red: 0.95, green: 0.95, blue: 0.97),
-                        lineWidth: 12
-                    )
-                    .frame(width: 100, height: 100)
+        Button(action: {
+            isShowingBudgetEditor = true
+        }) {
+            HStack(spacing: 24) {
+                // 左侧圆形进度环
+                ZStack {
+                    // 背景圆环
+                    Circle()
+                        .stroke(
+                            Color(red: 0.95, green: 0.95, blue: 0.97),
+                            lineWidth: 12
+                        )
+                        .frame(width: 100, height: 100)
 
-                // 进度圆环
-                Circle()
-                    .trim(from: 0, to: min(budgetUsagePercent / 100, 1.0))
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: budgetUsagePercent > 90 ? [
-                                Color(red: 0.95, green: 0.47, blue: 0.45),
-                                Color(red: 0.85, green: 0.37, blue: 0.35)
-                            ] : [
-                                Color(red: 0.35, green: 0.45, blue: 0.95),
-                                Color(red: 0.45, green: 0.55, blue: 1.0)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
-                    )
-                    .frame(width: 100, height: 100)
-                    .rotationEffect(.degrees(-90))
+                    // 进度圆环
+                    Circle()
+                        .trim(from: 0, to: min(budgetUsagePercent / 100, 1.0))
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: budgetUsagePercent > 90 ? [
+                                    Color(red: 0.95, green: 0.47, blue: 0.45),
+                                    Color(red: 0.85, green: 0.37, blue: 0.35)
+                                ] : [
+                                    Color(red: 0.35, green: 0.45, blue: 0.95),
+                                    Color(red: 0.45, green: 0.55, blue: 1.0)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        )
+                        .frame(width: 100, height: 100)
+                        .rotationEffect(.degrees(-90))
 
-                // 中心百分比
-                VStack(spacing: 2) {
-                    Text(String(format: "%.0f%%", budgetUsagePercent))
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : Color(red: 0.35, green: 0.45, blue: 0.95))
-                    Text("已用")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            // 右侧信息
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    Image(systemName: "chart.pie.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
-                    Text("本月预算")
-                        .font(.system(size: 16, weight: .semibold))
-
-                    Spacer()
-
-                    // 编辑按钮
-                    Button(action: {
-                        isShowingBudgetEditor = true
-                    }) {
-                        Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.6))
+                    // 中心百分比
+                    VStack(spacing: 2) {
+                        Text(String(format: "%.0f%%", budgetUsagePercent))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : Color(red: 0.35, green: 0.45, blue: 0.95))
+                        Text("已用")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("剩余")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
+                // 右侧信息
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chart.pie.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                        Text("本月预算")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.primary)
+
                         Spacer()
-                        Text(String(format: "¥%.2f", remainingBudget))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(remainingBudget > 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.95, green: 0.47, blue: 0.45))
+
+                        // 编辑提示图标
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary.opacity(0.5))
                     }
 
-                    // 日均可用
-                    let dailyAvailable = remainingBudget / Double(max(appState.daysRemainingInMonth, 1))
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                        Text("还有 \(appState.daysRemainingInMonth) 天")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text(String(format: "日均 ¥%.0f", dailyAvailable))
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.secondary)
-                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("剩余")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(String(format: "¥%.2f", remainingBudget))
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(remainingBudget > 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.95, green: 0.47, blue: 0.45))
+                        }
 
-                    // 已花费/总预算
-                    Text(String(format: "¥%.2f / ¥%.2f", expense, budget))
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary.opacity(0.7))
+                        // 日均可用
+                        let dailyAvailable = remainingBudget / Double(max(appState.daysRemainingInMonth, 1))
+                        HStack(spacing: 6) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Text("还有 \(appState.daysRemainingInMonth) 天")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(String(format: "日均 ¥%.0f", dailyAvailable))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
+
+                        // 已花费/总预算
+                        Text(String(format: "¥%.2f / ¥%.2f", expense, budget))
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary.opacity(0.7))
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
         }
-        .padding(20)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $isShowingBudgetEditor) {
             BudgetEditorView()
                 .environmentObject(appState)
