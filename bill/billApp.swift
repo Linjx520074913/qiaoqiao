@@ -128,6 +128,7 @@ class AppState: ObservableObject {
     @Published var pendingBills: [PendingBill] = []
     @Published var currentBillIndex = 0
     @Published var monthlyBudget: Double = 5000.0 // 默认预算5000元
+    var lastPasteboardChangeCount: Int = 0 // 记录上次剪贴板的变化次数
 
     // 计算属性：总资产
     var totalBalance: Double {

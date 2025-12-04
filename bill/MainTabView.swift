@@ -96,7 +96,11 @@ struct MainTabView: View {
         }
         .onAppear {
             addDebugMessage("🔵 MainTabView onAppear")
-            startPasteboardMonitoring()
+            // 初始化剪贴板变化计数（只在首次启动时）
+            if appState.lastPasteboardChangeCount == 0 {
+                appState.lastPasteboardChangeCount = UIPasteboard.general.changeCount
+                addDebugMessage("📋 初始化剪贴板计数: \(appState.lastPasteboardChangeCount)")
+            }
         }
         .onDisappear {
             addDebugMessage("🔴 MainTabView onDisappear")
@@ -107,14 +111,26 @@ struct MainTabView: View {
 
             if newPhase == .active {
                 // App从后台返回前台
-                addDebugMessage("✨ App返回前台，重新检查剪贴板")
+                addDebugMessage("✨ App返回前台")
 
-                // 清除之前的定时器
-                stopPasteboardMonitoring()
+                // 检查剪贴板是否有变化
+                let currentChangeCount = UIPasteboard.general.changeCount
+                addDebugMessage("📋 剪贴板计数: 当前=\(currentChangeCount), 上次=\(appState.lastPasteboardChangeCount)")
 
-                // 延迟一点再开始监听，确保剪贴板已更新
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    startPasteboardMonitoring()
+                if currentChangeCount != appState.lastPasteboardChangeCount {
+                    addDebugMessage("🔔 剪贴板内容已变化，开始监听")
+                    // 更新计数
+                    appState.lastPasteboardChangeCount = currentChangeCount
+
+                    // 清除之前的定时器
+                    stopPasteboardMonitoring()
+
+                    // 延迟一点再开始监听，确保剪贴板已更新
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.startPasteboardMonitoring()
+                    }
+                } else {
+                    addDebugMessage("ℹ️ 剪贴板无变化，不处理")
                 }
             } else if newPhase == .background {
                 addDebugMessage("💤 App进入后台")
