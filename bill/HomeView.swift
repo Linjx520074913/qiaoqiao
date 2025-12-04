@@ -61,12 +61,12 @@ struct HomeView: View {
 
     // MARK: - 视图组件
 
-    // 横向滚动卡片视图（禁用手势滑动，只能点击指示器切换）
+    // 横向滚动卡片视图（支持滑动切换和点击指示器切换）
     @State private var selectedCardIndex = 0
 
     private var horizontalCardsView: some View {
         VStack(spacing: 12) {
-            // 卡片显示区域 - 禁用TabView的滑动交互
+            // 卡片显示区域 - 支持滑动切换
             TabView(selection: $selectedCardIndex) {
                 // 卡片1: 今日支出 + 预算（合并）
                 todayExpenseAndBudgetCard
@@ -80,12 +80,6 @@ struct HomeView: View {
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 220)
-            .allowsHitTesting(false)  // 禁用TabView滑动，但不影响卡片内的按钮
-            .background(
-                // 透明层接收卡片内容的点击
-                Color.clear
-                    .allowsHitTesting(true)
-            )
 
             // 自定义页面指示器
             HStack(spacing: 8) {
