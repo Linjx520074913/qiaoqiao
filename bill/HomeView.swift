@@ -104,12 +104,22 @@ struct HomeView: View {
     private var monthlyOverview: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("本月概览")
-                    .font(.system(size: 18, weight: .bold))
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                    Text("本月概览")
+                        .font(.system(size: 18, weight: .bold))
+                }
                 Spacer()
-                Text(currentMonthText)
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                    Text(currentMonthText)
+                        .font(.system(size: 13))
+                        .foregroundColor(.gray)
+                }
             }
 
             // 整合的月度财务卡片
@@ -125,13 +135,23 @@ struct HomeView: View {
     private var transactionList: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("最近交易")
-                    .font(.system(size: 18, weight: .bold))
+                HStack(spacing: 8) {
+                    Image(systemName: "list.bullet.rectangle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                    Text("最近交易")
+                        .font(.system(size: 18, weight: .bold))
+                }
                 Spacer()
                 if !transactions.isEmpty {
-                    Text("\(transactions.count) 笔")
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
+                    HStack(spacing: 4) {
+                        Image(systemName: "number")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        Text("\(transactions.count) 笔")
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray)
+                    }
                 }
             }
             .padding(.horizontal, 20)
@@ -147,9 +167,24 @@ struct HomeView: View {
     // 空状态视图
     private var emptyStateView: some View {
         VStack(spacing: 20) {
-            Image(systemName: "tray")
-                .font(.system(size: 64))
-                .foregroundColor(.gray.opacity(0.3))
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.15),
+                                Color(red: 0.25, green: 0.35, blue: 0.85).opacity(0.08)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: "tray.fill")
+                    .font(.system(size: 48, weight: .medium))
+                    .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.5))
+            }
 
             VStack(spacing: 8) {
                 Text("暂无交易记录")
@@ -195,25 +230,35 @@ struct HomeView: View {
     // 悬浮添加按钮
     private var floatingAddButton: some View {
         Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
             isShowingAddTransaction = true
         }) {
             ZStack {
+                // 外层光晕
+                Circle()
+                    .fill(Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.2))
+                    .frame(width: 68, height: 68)
+                    .blur(radius: 8)
+
+                // 主按钮
                 Circle()
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.blue,
-                                Color.blue.opacity(0.8)
+                                Color(red: 0.35, green: 0.45, blue: 0.95),
+                                Color(red: 0.25, green: 0.35, blue: 0.85)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 60, height: 60)
-                    .shadow(color: .blue.opacity(0.4), radius: 12, x: 0, y: 6)
+                    .frame(width: 64, height: 64)
+                    .shadow(color: Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.4), radius: 12, x: 0, y: 6)
 
+                // 加号图标
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 26, weight: .semibold))
                     .foregroundColor(.white)
             }
         }

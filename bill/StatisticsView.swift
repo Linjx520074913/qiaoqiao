@@ -49,12 +49,16 @@ struct StatisticsView: View {
                         VStack(spacing: 16) {
                             // 月份切换
                             HStack {
-                                Button(action: previousMonth) {
+                                Button(action: {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    previousMonth()
+                                }) {
                                     ZStack {
                                         Circle()
                                             .fill(Color.white)
-                                            .frame(width: 40, height: 40)
-                                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+                                            .frame(width: 44, height: 44)
+                                            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
 
                                         Image(systemName: "chevron.left")
                                             .font(.system(size: 16, weight: .semibold))
@@ -64,17 +68,27 @@ struct StatisticsView: View {
 
                                 Spacer()
 
-                                Text(monthYearString)
-                                    .font(.system(size: 22, weight: .bold))
+                                HStack(spacing: 8) {
+                                    Image(systemName: "calendar.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+
+                                    Text(monthYearString)
+                                        .font(.system(size: 22, weight: .bold))
+                                }
 
                                 Spacer()
 
-                                Button(action: nextMonth) {
+                                Button(action: {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    nextMonth()
+                                }) {
                                     ZStack {
                                         Circle()
                                             .fill(Color.white)
-                                            .frame(width: 40, height: 40)
-                                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+                                            .frame(width: 44, height: 44)
+                                            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 3)
 
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 16, weight: .semibold))

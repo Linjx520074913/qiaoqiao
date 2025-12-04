@@ -275,16 +275,34 @@ struct CustomTabBar: View {
 
             // 中间的浮动按钮
             Button(action: {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
                 onScanTapped()
             }) {
                 ZStack {
+                    // 外层光晕
                     Circle()
-                        .fill(Color.blue)
-                        .frame(width: 64, height: 64)
-                        .shadow(color: .blue.opacity(0.3), radius: 10)
+                        .fill(Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.2))
+                        .frame(width: 72, height: 72)
+                        .blur(radius: 8)
+
+                    // 主按钮
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.35, green: 0.45, blue: 0.95),
+                                    Color(red: 0.25, green: 0.35, blue: 0.85)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 68, height: 68)
+                        .shadow(color: Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.4), radius: 12, x: 0, y: 6)
 
                     Image(systemName: "doc.text.viewfinder")
-                        .font(.system(size: 28))
+                        .font(.system(size: 30, weight: .semibold))
                         .foregroundColor(.white)
                 }
             }
@@ -320,14 +338,39 @@ struct TabBarButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 22))
-                Text(title)
-                    .font(.system(size: 10))
+        Button(action: {
+            if !isSelected {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
             }
-            .foregroundColor(isSelected ? .blue : .gray)
+            action()
+        }) {
+            VStack(spacing: 6) {
+                ZStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.15),
+                                        Color(red: 0.25, green: 0.35, blue: 0.85).opacity(0.08)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 56, height: 32)
+                    }
+
+                    Image(systemName: icon)
+                        .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+                        .foregroundColor(isSelected ? Color(red: 0.35, green: 0.45, blue: 0.95) : .gray)
+                }
+
+                Text(title)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? Color(red: 0.35, green: 0.45, blue: 0.95) : .gray)
+            }
             .frame(maxWidth: .infinity)
         }
     }
