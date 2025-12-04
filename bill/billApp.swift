@@ -155,16 +155,56 @@ class AppState: ObservableObject {
         return monthTransactions.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount }
     }
 
-    // 添加交易记录
-    func addTransaction(_ transaction: Transaction) {
-        transactions.insert(transaction, at: 0)
+    // 检查交易是否重复
+    func isDuplicateTransaction(_ newTransaction: Transaction) -> Bool {
+        let timeThreshold: TimeInterval = 300 // 5分钟内认为是重复
+
+        return transactions.contains { existing in
+            // 1. 商家名称相同
+            guard existing.merchantName == newTransaction.merchantName else { return false }
+
+            // 2. 金额相同（考虑浮点数精度）
+            guard abs(existing.amount - newTransaction.amount) < 0.01 else { return false }
+
+            // 3. 时间相近（5分钟内）
+            let timeDifference = abs(existing.date.timeIntervalSince(newTransaction.date))
+            guard timeDifference < timeThreshold else { return false }
+
+            // 4. 类型相同
+            guard existing.type == newTransaction.type else { return false }
+
+            return true
+        }
     }
 
-    // 批量添加交易记录
-    func addTransactions(_ newTransactions: [Transaction]) {
-        for transaction in newTransactions.reversed() {
-            transactions.insert(transaction, at: 0)
+    // 添加交易记录（带去重检查）
+    func addTransaction(_ transaction: Transaction) {
+        // 检查是否重复
+        if isDuplicateTransaction(transaction) {
+            print("⚠️ 检测到重复交易，已跳过: \(transaction.merchantName) ¥\(transaction.amount)")
+            return
         }
+
+        transactions.insert(transaction, at: 0)
+        print("✅ 成功添加交易: \(transaction.merchantName) ¥\(transaction.amount)")
+    }
+
+    // 批量添加交易记录（带去重检查）
+    func addTransactions(_ newTransactions: [Transaction]) {
+        var addedCount = 0
+        var duplicateCount = 0
+
+        for transaction in newTransactions.reversed() {
+            if isDuplicateTransaction(transaction) {
+                duplicateCount += 1
+                print("⚠️ 检测到重复交易，已跳过: \(transaction.merchantName) ¥\(transaction.amount)")
+            } else {
+                transactions.insert(transaction, at: 0)
+                addedCount += 1
+            }
+        }
+
+        print("✅ 批量添加完成: 成功\(addedCount)条，跳过重复\(duplicateCount)条")
     }
 
     // 删除交易记录

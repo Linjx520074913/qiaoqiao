@@ -382,6 +382,8 @@ struct BillConfirmationOverlay: View {
     @State private var offset: CGFloat = 0
     @State private var rotation: Double = 0
     @State private var showSuccessAnimation = false
+    @State private var showDuplicateToast = false
+    @State private var duplicateBillName = ""
 
     var currentBill: PendingBill? {
         guard appState.currentBillIndex < appState.pendingBills.count else { return nil }
@@ -469,25 +471,95 @@ struct BillConfirmationOverlay: View {
                 SuccessAnimationView()
                     .transition(.scale.combined(with: .opacity))
             }
+
+            // 重复账单提示Toast
+            if showDuplicateToast {
+                VStack {
+                    Spacer()
+
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.orange)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("账单重复")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.primary)
+
+                            Text("\(duplicateBillName) 已存在，已自动跳过")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 100)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(200)
+            }
         }
     }
 
     private func confirmCurrentBill() {
         guard let bill = currentBill else { return }
 
-        // 触觉反馈
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
-
-        // 转换为Transaction并保存
+        // 转换为Transaction
         let transaction = Transaction(
             merchantName: bill.merchantName,
             description: bill.description ?? "无备注",
             amount: bill.amount,
+            date: bill.date,
             type: bill.type,
             category: bill.category,
             icon: bill.icon
         )
+
+        // 检查是否重复
+        if appState.isDuplicateTransaction(transaction) {
+            // 显示重复提示
+            duplicateBillName = bill.merchantName
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                showDuplicateToast = true
+            }
+
+            // 触觉反馈（警告）
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.warning)
+
+            // 自动移动到下一张
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    showDuplicateToast = false
+                    appState.currentBillIndex += 1
+
+                    // 如果全部处理完毕,清空列表
+                    if appState.currentBillIndex >= appState.pendingBills.count {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            withAnimation {
+                                appState.pendingBills.removeAll()
+                                appState.currentBillIndex = 0
+                            }
+                        }
+                    }
+                }
+            }
+            return
+        }
+
+        // 触觉反馈
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
+        // 保存交易
         appState.addTransaction(transaction)
 
         // 移动到下一张
