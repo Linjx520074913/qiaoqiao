@@ -66,25 +66,29 @@ struct HomeView: View {
 
     private var horizontalCardsView: some View {
         VStack(spacing: 12) {
-            // 卡片显示区域 - 使用高优先级手势覆盖来禁用滑动
-            TabView(selection: $selectedCardIndex) {
-                // 卡片1: 今日支出 + 预算（合并）
-                todayExpenseAndBudgetCard
-                    .padding(.horizontal, 20)
-                    .tag(0)
+            // 卡片显示区域 - 禁用TabView的滑动交互
+            ZStack {
+                TabView(selection: $selectedCardIndex) {
+                    // 卡片1: 今日支出 + 预算（合并）
+                    todayExpenseAndBudgetCard
+                        .padding(.horizontal, 20)
+                        .tag(0)
 
-                // 卡片2: 本月收入支出
-                monthlyIncomeExpenseCard
-                    .padding(.horizontal, 20)
-                    .tag(1)
+                    // 卡片2: 本月收入支出
+                    monthlyIncomeExpenseCard
+                        .padding(.horizontal, 20)
+                        .tag(1)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .frame(height: 220)
+                .allowsHitTesting(false)  // 禁用TabView交互，性能更好
+
+                // 透明层接收点击（不接收滑动）
+                Color.clear
+                    .frame(height: 220)
+                    .contentShape(Rectangle())
+                    .allowsHitTesting(true)
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .frame(height: 220)
-            .highPriorityGesture(
-                DragGesture()
-                    .onChanged { _ in }
-                    .onEnded { _ in }
-            )
 
             // 自定义页面指示器
             HStack(spacing: 8) {
@@ -1315,25 +1319,35 @@ struct SwipeableTransactionRow: View {
             TransactionRowContent(transaction: transaction, showDetail: $showDetail)
                 .background(Color.white)
                 .offset(x: offset)
-                .highPriorityGesture(
-                    DragGesture(minimumDistance: 10)
+                .gesture(
+                    DragGesture(minimumDistance: 15)  // 增加最小距离，避免误触
                         .onChanged { value in
-                            // 只允许向左滑动
-                            if value.translation.width < 0 {
-                                offset = value.translation.width
-                            } else if offset < 0 {
-                                // 如果已经滑出，允许向右滑回去
-                                offset = min(0, offset + value.translation.width)
+                            // 只在水平方向滑动时响应
+                            let horizontalMovement = abs(value.translation.width)
+                            let verticalMovement = abs(value.translation.height)
+
+                            // 如果水平移动大于垂直移动，才认为是横向滑动
+                            if horizontalMovement > verticalMovement {
+                                if value.translation.width < 0 {
+                                    // 向左滑动
+                                    offset = max(value.translation.width, -deleteButtonWidth)
+                                } else if offset < 0 {
+                                    // 已经滑出，允许向右滑回去
+                                    offset = min(0, offset + value.translation.width)
+                                }
                             }
                         }
                         .onEnded { value in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                if value.translation.width < -50 {
-                                    // 滑动超过50，显示删除按钮
-                                    offset = -deleteButtonWidth
-                                } else {
-                                    // 滑回原位
-                                    offset = 0
+                            let horizontalMovement = abs(value.translation.width)
+                            let verticalMovement = abs(value.translation.height)
+
+                            if horizontalMovement > verticalMovement {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    if value.translation.width < -50 {
+                                        offset = -deleteButtonWidth
+                                    } else {
+                                        offset = 0
+                                    }
                                 }
                             }
                         }
