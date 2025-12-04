@@ -10,6 +10,8 @@ import SwiftUI
 struct StatisticsView: View {
     @State private var currentDate = Date()
     @State private var selectedDate: Date?
+    @State private var isDetailExpanded = false
+    @Namespace private var animation
 
     // 模拟每日支出数据
     @State private var dailyExpenses: [Date: Double] = {
@@ -36,103 +38,133 @@ struct StatisticsView: View {
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // 月份切换和总支出
-                    VStack(spacing: 16) {
-                        // 月份切换
-                        HStack {
-                            Button(action: previousMonth) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.blue)
+            ZStack(alignment: .top) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // 月份切换和总支出
+                        VStack(spacing: 16) {
+                            // 月份切换
+                            HStack {
+                                Button(action: previousMonth) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.blue)
+                                }
+
+                                Spacer()
+
+                                Text(monthYearString)
+                                    .font(.system(size: 20, weight: .bold))
+
+                                Spacer()
+
+                                Button(action: nextMonth) {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.blue)
+                                }
                             }
+                            .padding(.horizontal)
 
-                            Spacer()
+                            // 本月总支出 - 详情展开时缩小
+                            if !isDetailExpanded {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("本月支出")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                        Text("¥\(monthlyTotal, specifier: "%.2f")")
+                                            .font(.system(size: 28, weight: .bold))
+                                            .foregroundColor(.primary)
+                                    }
 
-                            Text(monthYearString)
-                                .font(.system(size: 20, weight: .bold))
+                                    Spacer()
 
-                            Spacer()
-
-                            Button(action: nextMonth) {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.blue)
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        Text("日均支出")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                        Text("¥\(monthlyTotal / 30, specifier: "%.2f")")
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundColor(.orange)
+                                    }
+                                }
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(16)
+                                .shadow(color: .gray.opacity(0.1), radius: 10)
+                                .padding(.horizontal)
+                                .transition(.move(edge: .top).combined(with: .opacity))
                             }
                         }
-                        .padding(.horizontal)
 
-                        // 本月总支出
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("本月支出")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
-                                Text("¥\(monthlyTotal, specifier: "%.2f")")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.primary)
+                        // 日历视图
+                        VStack(spacing: 0) {
+                            // 星期标题
+                            HStack(spacing: 0) {
+                                ForEach(weekdaySymbols, id: \.self) { symbol in
+                                    Text(symbol)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.gray)
+                                        .frame(maxWidth: .infinity)
+                                }
                             }
+                            .padding(.vertical, 12)
+                            .background(Color.gray.opacity(0.05))
 
-                            Spacer()
-
-                            VStack(alignment: .trailing, spacing: 4) {
-                                Text("日均支出")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
-                                Text("¥\(monthlyTotal / 30, specifier: "%.2f")")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.orange)
+                            // 日历网格 - 详情展开时缩小高度
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
+                                ForEach(daysInMonth, id: \.self) { date in
+                                    CalendarDayCell(
+                                        date: date,
+                                        expense: expenseForDate(date),
+                                        isSelected: isSameDay(date, selectedDate),
+                                        isToday: isSameDay(date, Date()),
+                                        isCompact: isDetailExpanded
+                                    )
+                                    .onTapGesture {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                            if isSameDay(date, selectedDate) {
+                                                selectedDate = nil
+                                                isDetailExpanded = false
+                                            } else {
+                                                selectedDate = date
+                                                isDetailExpanded = true
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        .padding()
                         .background(Color.white)
                         .cornerRadius(16)
                         .shadow(color: .gray.opacity(0.1), radius: 10)
                         .padding(.horizontal)
-                    }
 
-                    // 日历视图
-                    VStack(spacing: 0) {
-                        // 星期标题
-                        HStack(spacing: 0) {
-                            ForEach(weekdaySymbols, id: \.self) { symbol in
-                                Text(symbol)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.gray)
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .padding(.vertical, 12)
-                        .background(Color.gray.opacity(0.05))
-
-                        // 日历网格
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
-                            ForEach(daysInMonth, id: \.self) { date in
-                                CalendarDayCell(
-                                    date: date,
-                                    expense: expenseForDate(date),
-                                    isSelected: isSameDay(date, selectedDate),
-                                    isToday: isSameDay(date, Date())
-                                )
-                                .onTapGesture {
-                                    selectedDate = date
+                        // 详情面板 - 从底部滑入
+                        if isDetailExpanded, let selected = selectedDate {
+                            ExpandedDateDetail(
+                                date: selected,
+                                expense: expenseForDate(selected),
+                                onClose: {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        selectedDate = nil
+                                        isDetailExpanded = false
+                                    }
                                 }
-                            }
-                        }
-                    }
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .shadow(color: .gray.opacity(0.1), radius: 10)
-                    .padding(.horizontal)
-
-                    // 选中日期的详情
-                    if let selected = selectedDate {
-                        SelectedDateDetail(date: selected, expense: expenseForDate(selected))
+                            )
                             .padding(.horizontal)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .move(edge: .bottom).combined(with: .opacity)
+                            ))
+                        }
+
+                        // 占位空间
+                        Color.clear.frame(height: 100)
                     }
+                    .padding(.top)
                 }
-                .padding(.top)
             }
             .navigationTitle("统计")
             .navigationBarTitleDisplayMode(.large)
@@ -205,6 +237,7 @@ struct CalendarDayCell: View {
     let expense: Double?
     let isSelected: Bool
     let isToday: Bool
+    let isCompact: Bool
 
     private var calendar: Calendar {
         Calendar.current
@@ -221,32 +254,32 @@ struct CalendarDayCell: View {
     }
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: isCompact ? 2 : 4) {
             // 日期数字
             Text(dayNumber)
-                .font(.system(size: 16, weight: isToday ? .bold : .regular))
+                .font(.system(size: isCompact ? 14 : 16, weight: isToday ? .bold : .regular))
                 .foregroundColor(textColor)
 
             // 支出金额
             if let expense = expense, expense > 0 {
                 Text("¥\(Int(expense))")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: isCompact ? 8 : 10, weight: .medium))
                     .foregroundColor(expenseColor)
             } else {
                 Text("-")
-                    .font(.system(size: 10))
+                    .font(.system(size: isCompact ? 8 : 10))
                     .foregroundColor(.clear)
             }
         }
-        .frame(height: 60)
+        .frame(height: isCompact ? 40 : 60)
         .frame(maxWidth: .infinity)
         .background(backgroundColor)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: isCompact ? 6 : 8)
                 .stroke(borderColor, lineWidth: isToday ? 2 : 0)
         )
-        .cornerRadius(8)
-        .padding(2)
+        .cornerRadius(isCompact ? 6 : 8)
+        .padding(isCompact ? 1 : 2)
     }
 
     private var textColor: Color {
@@ -291,11 +324,12 @@ struct CalendarDayCell: View {
     }
 }
 
-// MARK: - Selected Date Detail
+// MARK: - Expanded Date Detail
 
-struct SelectedDateDetail: View {
+struct ExpandedDateDetail: View {
     let date: Date
     let expense: Double?
+    let onClose: () -> Void
 
     private var dateString: String {
         let formatter = DateFormatter()
@@ -305,48 +339,66 @@ struct SelectedDateDetail: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            // 标题栏
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(dateString)
-                        .font(.system(size: 16, weight: .semibold))
-                    Text("当日支出")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                }
+                Text("当日详情")
+                    .font(.system(size: 18, weight: .bold))
 
                 Spacer()
 
+                Button(action: onClose) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.gray)
+                }
+            }
+
+            // 日期和金额
+            VStack(spacing: 12) {
+                Text(dateString)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.gray)
+
                 if let expense = expense {
                     Text("¥\(expense, specifier: "%.2f")")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.red)
                 } else {
                     Text("¥0.00")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.gray)
                 }
+
+                Text("当日支出")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(12)
 
-            // 可以添加当日交易列表
+            // 消费记录
             if expense != nil && expense! > 0 {
-                Divider()
-
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("消费记录")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.gray)
+                        .font(.system(size: 16, weight: .semibold))
 
-                    Text("暂无详细记录")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray.opacity(0.6))
+                    VStack(spacing: 8) {
+                        Text("暂无详细记录")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray.opacity(0.6))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                    }
                 }
             }
         }
-        .padding()
+        .padding(20)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: .gray.opacity(0.1), radius: 10)
+        .shadow(color: .gray.opacity(0.2), radius: 15)
     }
 }
 

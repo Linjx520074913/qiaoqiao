@@ -400,6 +400,8 @@
 				DEVELOPMENT_TEAM = LVWU4748YB;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleURLTypes = "{ CFBundleURLName = \"com.linjx.bill\"; CFBundleURLSchemes = ( \"bill\" ); }";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问您的照片库以选择账单图片进行识别";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +430,8 @@
 				DEVELOPMENT_TEAM = LVWU4748YB;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleURLTypes = "{ CFBundleURLName = \"com.linjx.bill\"; CFBundleURLSchemes = ( \"bill\" ); }";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问您的照片库以选择账单图片进行识别";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
