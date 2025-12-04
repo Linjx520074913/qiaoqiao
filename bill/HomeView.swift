@@ -29,13 +29,13 @@ struct HomeView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     // 顶部问候语
                     greetingHeader
                         .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                        .padding(.top, 12)
 
-                    // 本月概览
+                    // 本月概览卡片
                     monthlyOverview
                         .padding(.horizontal, 20)
 
@@ -46,16 +46,7 @@ struct HomeView: View {
                     Color.clear.frame(height: 80)
                 }
             }
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 0.95, green: 0.97, blue: 1.0),
-                        Color.white
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+            .background(Color(red: 0.97, green: 0.97, blue: 0.98))
 
             // 悬浮添加按钮
             floatingAddButton
@@ -73,37 +64,39 @@ struct HomeView: View {
 
     // 问候语头部
     private var greetingHeader: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(greetingText)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.primary)
 
                 Text(dateText)
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.secondary)
             }
 
             Spacer()
 
             // 头像
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.blue.opacity(0.6),
-                            Color.purple.opacity(0.6)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.35, green: 0.45, blue: 0.95),
+                                Color(red: 0.55, green: 0.35, blue: 0.85)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white)
-                )
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "person.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+            }
+            .shadow(color: Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.3), radius: 8, x: 0, y: 4)
         }
     }
 
@@ -295,94 +288,169 @@ struct MonthlyFinanceCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            // 收入和支出行
-            HStack(spacing: 16) {
-                // 收入
-                FinanceItem(
-                    icon: "arrow.down.circle.fill",
-                    iconColor: Color(red: 0.4, green: 0.78, blue: 0.47),
-                    title: "收入",
-                    amount: income,
-                    backgroundColor: Color(red: 0.4, green: 0.78, blue: 0.47).opacity(0.12)
-                )
-
-                // 支出
-                FinanceItem(
-                    icon: "arrow.up.circle.fill",
-                    iconColor: Color(red: 0.95, green: 0.47, blue: 0.45),
-                    title: "支出",
-                    amount: expense,
-                    backgroundColor: Color(red: 0.95, green: 0.47, blue: 0.45).opacity(0.12)
-                )
-            }
-
-            // 预算部分
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chart.pie.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(red: 0.4, green: 0.6, blue: 1.0))
-
-                        Text("预算")
+        VStack(spacing: 12) {
+            // 收入和支出卡片
+            HStack(spacing: 12) {
+                // 收入卡片
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("收入")
                             .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                        Spacer()
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+
+                    Text(String(format: "¥%.2f", income))
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    ZStack {
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.2, green: 0.78, blue: 0.35),
+                                Color(red: 0.15, green: 0.68, blue: 0.30)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+
+                        GeometryReader { geo in
+                            Circle()
+                                .fill(.white.opacity(0.1))
+                                .frame(width: 80, height: 80)
+                                .offset(x: geo.size.width - 40, y: -20)
+                        }
+                    }
+                )
+                .cornerRadius(20)
+                .shadow(color: Color(red: 0.2, green: 0.78, blue: 0.35).opacity(0.4), radius: 12, x: 0, y: 6)
+
+                // 支出卡片
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("支出")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                        Spacer()
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+
+                    Text(String(format: "¥%.2f", expense))
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    ZStack {
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.35, green: 0.45, blue: 0.95),
+                                Color(red: 0.25, green: 0.35, blue: 0.85)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+
+                        GeometryReader { geo in
+                            Circle()
+                                .fill(.white.opacity(0.1))
+                                .frame(width: 80, height: 80)
+                                .offset(x: geo.size.width - 40, y: -20)
+                        }
+                    }
+                )
+                .cornerRadius(20)
+                .shadow(color: Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.4), radius: 12, x: 0, y: 6)
+            }
+            .frame(height: 120)
+
+            // 预算卡片
+            VStack(spacing: 16) {
+                HStack {
+                    HStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "chart.pie.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.50))
+                        }
+
+                        Text("本月预算")
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.primary)
                     }
 
                     Spacer()
 
-                    Text(String(format: "%.0f%%", budgetUsagePercent))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : .gray)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(String(format: "%.0f%%", budgetUsagePercent))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : .primary)
+
+                        Text("已使用")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
                 }
 
-                // 预算进度条
+                // 进度条
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // 背景
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.15))
-                            .frame(height: 8)
+                        Capsule()
+                            .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                            .frame(height: 10)
 
-                        // 进度
-                        RoundedRectangle(cornerRadius: 8)
+                        Capsule()
                             .fill(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45) : Color(red: 0.4, green: 0.6, blue: 1.0),
-                                        budgetUsagePercent > 90 ? Color(red: 0.95, green: 0.47, blue: 0.45).opacity(0.7) : Color(red: 0.5, green: 0.7, blue: 1.0)
+                                    gradient: Gradient(colors: budgetUsagePercent > 90 ? [
+                                        Color(red: 0.95, green: 0.47, blue: 0.45),
+                                        Color(red: 0.85, green: 0.37, blue: 0.35)
+                                    ] : [
+                                        Color(red: 0.35, green: 0.45, blue: 0.95),
+                                        Color(red: 0.45, green: 0.55, blue: 1.0)
                                     ]),
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: geometry.size.width * CGFloat(budgetUsagePercent / 100), height: 8)
+                            .frame(width: geometry.size.width * CGFloat(budgetUsagePercent / 100), height: 10)
                     }
                 }
-                .frame(height: 8)
+                .frame(height: 10)
 
-                // 预算金额信息
                 HStack {
-                    Text(String(format: "剩余 ¥%.2f", remainingBudget))
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                    Text(String(format: "¥%.2f / ¥%.2f", expense, budget))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
 
                     Spacer()
 
-                    Text(String(format: "总额 ¥%.2f", budget))
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                    Text(String(format: "剩余 ¥%.2f", remainingBudget))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(remainingBudget > 0 ? Color(red: 0.2, green: 0.78, blue: 0.35) : Color(red: 0.95, green: 0.47, blue: 0.45))
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(20)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
-        )
     }
 }
 
