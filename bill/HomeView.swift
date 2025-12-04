@@ -43,87 +43,26 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // 顶部问候和头像
+                // 顶部标题
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("早上好，")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                        Text("记账小助手")
-                            .font(.system(size: 20, weight: .bold))
-                    }
+                    Text("记账")
+                        .font(.system(size: 28, weight: .bold))
 
                     Spacer()
 
-                    // 自动记账标识
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.green)
-                        Text("自动记账")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.green)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.green.opacity(0.1))
-                    .cornerRadius(12)
-
-                    // 头像
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .frame(width: 50, height: 50)
-                        .foregroundColor(.blue)
-                }
-                .padding(.horizontal)
-
-                // 账本选择和添加账本按钮
-                HStack {
-                    HStack(spacing: 8) {
-                        Text("全部账户")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.blue)
-                            .cornerRadius(8)
-
-                        Text("现金")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-
-                        Text("银行卡")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
-
-                    Spacer()
-
+                    // 添加记账按钮
                     Button(action: {}) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 12))
-                            Text("记一笔")
-                                .font(.system(size: 14, weight: .medium))
-                        }
-                        .foregroundColor(.blue)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.blue)
                     }
                 }
                 .padding(.horizontal)
 
-                // 账户卡片轮播
-                TabView {
-                    ForEach(accounts) { account in
-                        AccountCardView(account: account)
-                    }
-                }
-                .frame(height: 200)
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
 
-                // 快捷操作按钮
-                HStack(spacing: 40) {
-                    QuickActionButton(icon: "plus.circle.fill", title: "记支出", color: .red)
-                    QuickActionButton(icon: "arrow.down.circle.fill", title: "记收入", color: .green)
-                    QuickActionButton(icon: "arrow.left.arrow.right.circle.fill", title: "转账", color: .blue)
+                // 账户卡片
+                ForEach(accounts) { account in
+                    AccountCardView(account: account)
                 }
                 .padding(.horizontal)
 
@@ -156,100 +95,56 @@ struct AccountCardView: View {
     let account: Account
 
     var body: some View {
-        ZStack {
-            // 背景渐变
-            LinearGradient(gradient: Gradient(colors: account.backgroundColor),
-                          startPoint: .topLeading,
-                          endPoint: .bottomTrailing)
-                .cornerRadius(20)
+        VStack(spacing: 0) {
+            // 总资产部分
+            VStack(spacing: 8) {
+                Text("总资产")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
 
-            // 装饰性图形
-            GeometryReader { geometry in
-                Circle()
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 150, height: 150)
-                    .offset(x: geometry.size.width - 80, y: -30)
-
-                Circle()
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 100, height: 100)
-                    .offset(x: geometry.size.width - 50, y: geometry.size.height - 50)
+                Text("¥\(account.balance, specifier: "%.2f")")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundColor(.primary)
             }
+            .padding(.vertical, 24)
 
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "wallet.pass.fill")
-                    Text(account.name)
-                        .font(.system(size: 16))
-                    Spacer()
-                    Text(account.accountType)
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.8))
-                }
+            Divider()
 
-                Spacer()
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("总资产")
+            // 收支统计
+            HStack(spacing: 0) {
+                // 支出
+                VStack(spacing: 8) {
+                    Text("支出")
                         .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.8))
-                    HStack {
-                        Text("¥\(account.balance, specifier: "%.2f")")
-                            .font(.system(size: 32, weight: .bold))
-                        Image(systemName: "eye.slash")
-                            .font(.system(size: 14))
-                    }
+                        .foregroundColor(.gray)
+                    Text("¥1,240")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.red)
                 }
+                .frame(maxWidth: .infinity)
 
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("本月支出")
-                            .font(.system(size: 11))
-                            .foregroundColor(.white.opacity(0.7))
-                        Text("¥1,240")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("本月收入")
-                            .font(.system(size: 11))
-                            .foregroundColor(.white.opacity(0.7))
-                        Text("¥8,500")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
+                Divider()
+                    .frame(height: 40)
+
+                // 收入
+                VStack(spacing: 8) {
+                    Text("收入")
+                        .font(.system(size: 13))
+                        .foregroundColor(.gray)
+                    Text("¥8,500")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.green)
                 }
+                .frame(maxWidth: .infinity)
             }
-            .foregroundColor(.white)
-            .padding(24)
+            .padding(.vertical, 20)
         }
-        .frame(height: 180)
-        .padding(.horizontal)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .gray.opacity(0.1), radius: 10)
     }
 }
 
-// 快捷操作按钮
-struct QuickActionButton: View {
-    let icon: String
-    let title: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Circle()
-                .fill(Color.white)
-                .frame(width: 60, height: 60)
-                .shadow(color: .gray.opacity(0.2), radius: 10)
-                .overlay(
-                    Image(systemName: icon)
-                        .font(.system(size: 24))
-                        .foregroundColor(color)
-                )
-
-            Text(title)
-                .font(.system(size: 14))
-                .foregroundColor(.primary)
-        }
-    }
-}
 
 // 交易行视图
 struct TransactionRow: View {

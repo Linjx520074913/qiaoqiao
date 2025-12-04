@@ -53,156 +53,77 @@ struct StatisticsView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // 时间段选择器
-                    HStack(spacing: 12) {
+                    HStack(spacing: 0) {
                         ForEach(0..<periods.count, id: \.self) { index in
                             Button(action: {
                                 selectedPeriod = index
                             }) {
                                 Text(periods[index])
                                     .font(.system(size: 15, weight: selectedPeriod == index ? .semibold : .regular))
-                                    .foregroundColor(selectedPeriod == index ? .white : .primary)
-                                    .padding(.horizontal, 24)
+                                    .foregroundColor(selectedPeriod == index ? .white : .gray)
+                                    .frame(maxWidth: .infinity)
                                     .padding(.vertical, 10)
-                                    .background(selectedPeriod == index ? Color.blue : Color.gray.opacity(0.1))
-                                    .cornerRadius(12)
+                                    .background(selectedPeriod == index ? Color.blue : Color.clear)
                             }
                         }
-                        Spacer()
                     }
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
                     .padding(.horizontal)
 
-                    // 圆环图
-                    ZStack {
-                        // 圆环
-                        DonutChart(data: categoryData, total: totalSpent)
-                            .frame(width: 200, height: 200)
-
-                        // 中心数字
-                        VStack(spacing: 4) {
-                            Text("\(totalSpent, specifier: "%.2f")元")
-                                .font(.system(size: 28, weight: .bold))
-                            Text("消费")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
+                    // 总支出金额
+                    VStack(spacing: 8) {
+                        Text("本月支出")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                        Text("¥\(totalSpent, specifier: "%.2f")")
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundColor(.primary)
                     }
                     .padding(.vertical, 20)
 
-                    // 分类图例
-                    HStack(spacing: 20) {
+                    // 分类列表
+                    VStack(spacing: 12) {
                         ForEach(categoryData) { item in
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(item.category.color)
-                                    .frame(width: 8, height: 8)
+                            HStack {
+                                // 分类图标
+                                Image(systemName: item.category.icon)
+                                    .font(.system(size: 20))
+                                    .foregroundColor(item.category.color)
+                                    .frame(width: 40, height: 40)
+                                    .background(item.category.color.opacity(0.1))
+                                    .cornerRadius(10)
+
+                                // 分类名称
                                 Text(item.category.rawValue)
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 16))
                                     .foregroundColor(.primary)
+
+                                Spacer()
+
+                                // 金额和百分比
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("¥\(item.amount, specifier: "%.2f")")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                    Text("\(Int(item.percentage))%")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.gray)
+                                }
                             }
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
                         }
                     }
                     .padding(.horizontal)
 
-                    Divider()
-                        .padding(.horizontal)
-
-                    // 交易列表
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("支出明细")
-                                .font(.system(size: 18, weight: .bold))
-                            Spacer()
-                            Button(action: {}) {
-                                Text("查看全部")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .padding(.horizontal)
-
-                        ForEach(transactions) { transaction in
-                            TransactionRow(transaction: transaction)
-                        }
-                    }
                 }
                 .padding(.top)
             }
-            .navigationTitle("账单统计")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {}) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.primary)
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {}) {
-                        Image(systemName: "slider.horizontal.3")
-                            .foregroundColor(.primary)
-                    }
-                }
-            }
+            .navigationTitle("统计")
+            .navigationBarTitleDisplayMode(.large)
         }
-    }
-}
-
-// 圆环图组件
-struct DonutChart: View {
-    let data: [StatisticsView.CategorySpending]
-    let total: Double
-    let lineWidth: CGFloat = 20
-
-    var body: some View {
-        ZStack {
-            ForEach(Array(data.enumerated()), id: \.element.id) { index, item in
-                DonutSlice(
-                    startAngle: startAngle(for: index),
-                    endAngle: endAngle(for: index),
-                    color: item.category.color,
-                    lineWidth: lineWidth
-                )
-            }
-        }
-    }
-
-    private func startAngle(for index: Int) -> Angle {
-        let previousPercentages = data.prefix(index).reduce(0.0) { $0 + $1.percentage }
-        return Angle(degrees: previousPercentages * 3.6 - 90)
-    }
-
-    private func endAngle(for index: Int) -> Angle {
-        let previousPercentages = data.prefix(index + 1).reduce(0.0) { $0 + $1.percentage }
-        return Angle(degrees: previousPercentages * 3.6 - 90)
-    }
-}
-
-// 圆环切片
-struct DonutSlice: View {
-    let startAngle: Angle
-    let endAngle: Angle
-    let color: Color
-    let lineWidth: CGFloat
-
-    var body: some View {
-        Circle()
-            .trim(from: 0, to: 1)
-            .stroke(style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-            .fill(
-                AngularGradient(
-                    gradient: Gradient(colors: [color.opacity(0.7), color]),
-                    center: .center,
-                    startAngle: startAngle,
-                    endAngle: endAngle
-                )
-            )
-            .rotationEffect(startAngle)
-            .overlay(
-                Circle()
-                    .trim(from: 0, to: (endAngle.degrees - startAngle.degrees) / 360)
-                    .stroke(color, lineWidth: lineWidth)
-                    .rotationEffect(startAngle)
-            )
     }
 }
 
