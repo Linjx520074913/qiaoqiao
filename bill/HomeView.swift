@@ -1319,15 +1319,15 @@ struct SwipeableTransactionRow: View {
             TransactionRowContent(transaction: transaction, showDetail: $showDetail)
                 .background(Color.white)
                 .offset(x: offset)
-                .gesture(
-                    DragGesture(minimumDistance: 15)  // 增加最小距离，避免误触
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 10)
                         .onChanged { value in
-                            // 只在水平方向滑动时响应
+                            // 判断滑动方向
                             let horizontalMovement = abs(value.translation.width)
                             let verticalMovement = abs(value.translation.height)
 
-                            // 如果水平移动大于垂直移动，才认为是横向滑动
-                            if horizontalMovement > verticalMovement {
+                            // 如果水平移动明显大于垂直移动（至少1.5倍），才认为是横向滑动
+                            if horizontalMovement > verticalMovement * 1.5 {
                                 if value.translation.width < 0 {
                                     // 向左滑动
                                     offset = max(value.translation.width, -deleteButtonWidth)
@@ -1341,7 +1341,8 @@ struct SwipeableTransactionRow: View {
                             let horizontalMovement = abs(value.translation.width)
                             let verticalMovement = abs(value.translation.height)
 
-                            if horizontalMovement > verticalMovement {
+                            // 同样的方向判断
+                            if horizontalMovement > verticalMovement * 1.5 {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     if value.translation.width < -50 {
                                         offset = -deleteButtonWidth
