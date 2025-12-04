@@ -20,7 +20,7 @@ struct MainTabView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // 主内容区域
+            // 主内容区域 - 禁用滑动切换
             TabView(selection: $selectedTab) {
                 HomeView()
                     .tag(0)
@@ -38,6 +38,11 @@ struct MainTabView: View {
                     .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .allowsHitTesting(false)  // 禁用TabView的滑动切换
+
+            // 透明层用于接收内容区域的点击
+            Color.clear
+                .allowsHitTesting(true)
 
             // 自定义底部导航栏
             CustomTabBar(selectedTab: $selectedTab, onScanTapped: {
