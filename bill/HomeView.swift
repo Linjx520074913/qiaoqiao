@@ -67,28 +67,25 @@ struct HomeView: View {
     private var horizontalCardsView: some View {
         VStack(spacing: 12) {
             // 卡片显示区域 - 禁用TabView的滑动交互
-            ZStack {
-                TabView(selection: $selectedCardIndex) {
-                    // 卡片1: 今日支出 + 预算（合并）
-                    todayExpenseAndBudgetCard
-                        .padding(.horizontal, 20)
-                        .tag(0)
+            TabView(selection: $selectedCardIndex) {
+                // 卡片1: 今日支出 + 预算（合并）
+                todayExpenseAndBudgetCard
+                    .padding(.horizontal, 20)
+                    .tag(0)
 
-                    // 卡片2: 本月收入支出
-                    monthlyIncomeExpenseCard
-                        .padding(.horizontal, 20)
-                        .tag(1)
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .frame(height: 220)
-                .allowsHitTesting(false)  // 禁用TabView交互，性能更好
-
-                // 透明层接收点击（不接收滑动）
-                Color.clear
-                    .frame(height: 220)
-                    .contentShape(Rectangle())
-                    .allowsHitTesting(true)
+                // 卡片2: 本月收入支出
+                monthlyIncomeExpenseCard
+                    .padding(.horizontal, 20)
+                    .tag(1)
             }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .frame(height: 220)
+            .allowsHitTesting(false)  // 禁用TabView滑动，但不影响卡片内的按钮
+            .background(
+                // 透明层接收卡片内容的点击
+                Color.clear
+                    .allowsHitTesting(true)
+            )
 
             // 自定义页面指示器
             HStack(spacing: 8) {
