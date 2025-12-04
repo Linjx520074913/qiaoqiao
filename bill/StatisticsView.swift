@@ -39,6 +39,10 @@ struct StatisticsView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
+                // 背景色
+                Color(red: 0.97, green: 0.97, blue: 0.98)
+                    .ignoresSafeArea()
+
                 ScrollView {
                     VStack(spacing: 20) {
                         // 月份切换和总支出
@@ -46,54 +50,96 @@ struct StatisticsView: View {
                             // 月份切换
                             HStack {
                                 Button(action: previousMonth) {
-                                    Image(systemName: "chevron.left")
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(.blue)
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.white)
+                                            .frame(width: 40, height: 40)
+                                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+
+                                        Image(systemName: "chevron.left")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                                    }
                                 }
 
                                 Spacer()
 
                                 Text(monthYearString)
-                                    .font(.system(size: 20, weight: .bold))
+                                    .font(.system(size: 22, weight: .bold))
 
                                 Spacer()
 
                                 Button(action: nextMonth) {
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(.blue)
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.white)
+                                            .frame(width: 40, height: 40)
+                                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
+                                    }
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 20)
 
-                            // 本月总支出 - 详情展开时缩小
+                            // 本月总支出 - 渐变卡片
                             if !isDetailExpanded {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
+                                VStack(spacing: 16) {
+                                    HStack {
                                         Text("本月支出")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.gray)
-                                        Text("¥\(monthlyTotal, specifier: "%.2f")")
-                                            .font(.system(size: 28, weight: .bold))
-                                            .foregroundColor(.primary)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.9))
+                                        Spacer()
+                                        Image(systemName: "chart.bar.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.9))
                                     }
 
-                                    Spacer()
+                                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                        Text("¥")
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundColor(.white.opacity(0.8))
+                                        Text(String(format: "%.2f", monthlyTotal))
+                                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                    }
 
-                                    VStack(alignment: .trailing, spacing: 4) {
+                                    HStack {
                                         Text("日均支出")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.gray)
-                                        Text("¥\(monthlyTotal / 30, specifier: "%.2f")")
-                                            .font(.system(size: 18, weight: .semibold))
-                                            .foregroundColor(.orange)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.75))
+                                        Spacer()
+                                        Text(String(format: "¥%.2f", monthlyTotal / 30))
+                                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white.opacity(0.95))
                                     }
                                 }
-                                .padding()
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .shadow(color: .gray.opacity(0.1), radius: 10)
-                                .padding(.horizontal)
+                                .padding(24)
+                                .background(
+                                    ZStack {
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.35, green: 0.45, blue: 0.95),
+                                                Color(red: 0.25, green: 0.35, blue: 0.85)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+
+                                        GeometryReader { geo in
+                                            Circle()
+                                                .fill(.white.opacity(0.1))
+                                                .frame(width: 120, height: 120)
+                                                .offset(x: geo.size.width - 60, y: -30)
+                                        }
+                                    }
+                                )
+                                .cornerRadius(20)
+                                .shadow(color: Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.4), radius: 20, x: 0, y: 8)
+                                .padding(.horizontal, 20)
                                 .transition(.move(edge: .top).combined(with: .opacity))
                             }
                         }
@@ -104,13 +150,13 @@ struct StatisticsView: View {
                             HStack(spacing: 0) {
                                 ForEach(weekdaySymbols, id: \.self) { symbol in
                                     Text(symbol)
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.gray)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(.secondary)
                                         .frame(maxWidth: .infinity)
                                 }
                             }
-                            .padding(.vertical, 12)
-                            .background(Color.gray.opacity(0.05))
+                            .padding(.vertical, 16)
+                            .background(Color(red: 0.96, green: 0.96, blue: 0.97))
 
                             // 日历网格 - 详情展开时缩小高度
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
@@ -137,9 +183,9 @@ struct StatisticsView: View {
                             }
                         }
                         .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(color: .gray.opacity(0.1), radius: 10)
-                        .padding(.horizontal)
+                        .cornerRadius(20)
+                        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+                        .padding(.horizontal, 20)
 
                         // 详情面板 - 从底部滑入
                         if isDetailExpanded, let selected = selectedDate {
@@ -254,39 +300,39 @@ struct CalendarDayCell: View {
     }
 
     var body: some View {
-        VStack(spacing: isCompact ? 2 : 4) {
+        VStack(spacing: isCompact ? 2 : 6) {
             // 日期数字
             Text(dayNumber)
-                .font(.system(size: isCompact ? 14 : 16, weight: isToday ? .bold : .regular))
+                .font(.system(size: isCompact ? 14 : 17, weight: isToday ? .bold : .semibold, design: .rounded))
                 .foregroundColor(textColor)
 
             // 支出金额
             if let expense = expense, expense > 0 {
                 Text("¥\(Int(expense))")
-                    .font(.system(size: isCompact ? 8 : 10, weight: .medium))
+                    .font(.system(size: isCompact ? 8 : 11, weight: .semibold))
                     .foregroundColor(expenseColor)
             } else {
                 Text("-")
-                    .font(.system(size: isCompact ? 8 : 10))
+                    .font(.system(size: isCompact ? 8 : 11))
                     .foregroundColor(.clear)
             }
         }
-        .frame(height: isCompact ? 40 : 60)
+        .frame(height: isCompact ? 44 : 64)
         .frame(maxWidth: .infinity)
         .background(backgroundColor)
         .overlay(
-            RoundedRectangle(cornerRadius: isCompact ? 6 : 8)
-                .stroke(borderColor, lineWidth: isToday ? 2 : 0)
+            RoundedRectangle(cornerRadius: isCompact ? 8 : 12)
+                .stroke(borderColor, lineWidth: isToday ? 2.5 : 0)
         )
-        .cornerRadius(isCompact ? 6 : 8)
-        .padding(isCompact ? 1 : 2)
+        .cornerRadius(isCompact ? 8 : 12)
+        .padding(isCompact ? 2 : 3)
     }
 
     private var textColor: Color {
         if isSelected {
             return .white
         } else if isToday {
-            return .blue
+            return Color(red: 0.35, green: 0.45, blue: 0.95)
         } else if !isCurrentMonth {
             return .gray.opacity(0.3)
         } else {
@@ -296,28 +342,28 @@ struct CalendarDayCell: View {
 
     private var backgroundColor: Color {
         if isSelected {
-            return .blue
+            return Color(red: 0.35, green: 0.45, blue: 0.95)
         } else if isToday {
-            return .blue.opacity(0.1)
+            return Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.12)
         } else {
             return .clear
         }
     }
 
     private var borderColor: Color {
-        isToday ? .blue : .clear
+        isToday ? Color(red: 0.35, green: 0.45, blue: 0.95) : .clear
     }
 
     private var expenseColor: Color {
         if isSelected {
-            return .white
+            return .white.opacity(0.9)
         } else if let expense = expense {
             if expense > 200 {
-                return .red
+                return Color(red: 0.95, green: 0.47, blue: 0.45)
             } else if expense > 100 {
-                return .orange
+                return Color(red: 0.95, green: 0.60, blue: 0.35)
             } else {
-                return .green
+                return Color(red: 0.2, green: 0.78, blue: 0.35)
             }
         }
         return .gray
@@ -339,7 +385,7 @@ struct ExpandedDateDetail: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
             // 标题栏
             HStack {
                 Text("当日详情")
@@ -348,57 +394,115 @@ struct ExpandedDateDetail: View {
                 Spacer()
 
                 Button(action: onClose) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.gray)
-                }
-            }
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                            .frame(width: 32, height: 32)
 
-            // 日期和金额
-            VStack(spacing: 12) {
-                Text(dateString)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.gray)
-
-                if let expense = expense {
-                    Text("¥\(expense, specifier: "%.2f")")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.red)
-                } else {
-                    Text("¥0.00")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.gray)
-                }
-
-                Text("当日支出")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .background(Color.gray.opacity(0.05))
-            .cornerRadius(12)
-
-            // 消费记录
-            if expense != nil && expense! > 0 {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("消费记录")
-                        .font(.system(size: 16, weight: .semibold))
-
-                    VStack(spacing: 8) {
-                        Text("暂无详细记录")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray.opacity(0.6))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
                     }
                 }
             }
+            .padding(20)
+            .background(Color.white)
+
+            // 日期和金额 - 渐变卡片
+            VStack(spacing: 16) {
+                Text(dateString)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.85))
+
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("¥")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.8))
+                    if let expense = expense {
+                        Text(String(format: "%.2f", expense))
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    } else {
+                        Text("0.00")
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+
+                Text("当日支出")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.75))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 28)
+            .background(
+                ZStack {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.35, green: 0.45, blue: 0.95),
+                            Color(red: 0.25, green: 0.35, blue: 0.85)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    GeometryReader { geo in
+                        Circle()
+                            .fill(.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .offset(x: geo.size.width - 50, y: -25)
+                    }
+                }
+            )
+
+            // 消费记录
+            VStack(alignment: .leading, spacing: 16) {
+                Text("消费记录")
+                    .font(.system(size: 16, weight: .semibold))
+
+                if expense != nil && expense! > 0 {
+                    VStack(spacing: 12) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(red: 0.95, green: 0.95, blue: 0.97))
+                                    .frame(width: 44, height: 44)
+
+                                Image(systemName: "cart.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.secondary)
+                            }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("暂无详细记录")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.primary)
+
+                                Text("等待同步交易数据")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+                        }
+                        .padding(16)
+                        .background(Color(red: 0.97, green: 0.97, blue: 0.98))
+                        .cornerRadius(12)
+                    }
+                } else {
+                    Text("今日无消费")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                }
+            }
+            .padding(20)
+            .background(Color.white)
         }
-        .padding(20)
         .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .gray.opacity(0.2), radius: 15)
+        .cornerRadius(20)
+        .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
     }
 }
 
