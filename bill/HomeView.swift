@@ -35,13 +35,8 @@ struct HomeView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
 
-                    // 今日支出卡片
-                    todaySummaryCard
-                        .padding(.horizontal, 20)
-
-                    // 本月概览卡片
-                    monthlyOverview
-                        .padding(.horizontal, 20)
+                    // 横向滚动卡片
+                    horizontalCardsView
 
                     // 交易列表
                     transactionList
@@ -65,6 +60,27 @@ struct HomeView: View {
     }
 
     // MARK: - 视图组件
+
+    // 横向滚动卡片视图
+    private var horizontalCardsView: some View {
+        VStack(spacing: 12) {
+            TabView {
+                // 卡片1: 今日支出
+                todaySummaryCard
+                    .padding(.horizontal, 20)
+
+                // 卡片2: 本月收入支出
+                monthlyIncomeExpenseCard
+                    .padding(.horizontal, 20)
+
+                // 卡片3: 预算进度
+                budgetCard
+                    .padding(.horizontal, 20)
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
+            .frame(height: 200)
+        }
+    }
 
     // 今日支出卡片
     private var todaySummaryCard: some View {
@@ -205,35 +221,116 @@ struct HomeView: View {
         }
     }
 
-    // 本月概览
-    private var monthlyOverview: some View {
-        VStack(spacing: 16) {
-            HStack {
-                HStack(spacing: 8) {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Color(red: 0.35, green: 0.45, blue: 0.95))
-                    Text("本月概览")
-                        .font(.system(size: 18, weight: .bold))
+    // 本月收入支出卡片（用于横向滚动）
+    private var monthlyIncomeExpenseCard: some View {
+        HStack(spacing: 12) {
+            // 收入卡片
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("本月收入")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.9))
+                    Spacer()
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.9))
                 }
-                Spacer()
-                HStack(spacing: 6) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    Text(currentMonthText)
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
-                }
-            }
 
-            // 整合的月度财务卡片
-            MonthlyFinanceCard(
-                income: appState.monthlyIncome,
-                expense: appState.monthlyExpense,
-                budget: appState.monthlyBudget
+                Spacer()
+
+                Text(String(format: "¥%.2f", appState.monthlyIncome))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+
+                Text(currentMonthText)
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                ZStack {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.2, green: 0.78, blue: 0.35),
+                            Color(red: 0.15, green: 0.68, blue: 0.30)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    GeometryReader { geo in
+                        Circle()
+                            .fill(.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .offset(x: geo.size.width - 50, y: -20)
+                    }
+                }
             )
+            .cornerRadius(20)
+            .shadow(color: Color(red: 0.2, green: 0.78, blue: 0.35).opacity(0.4), radius: 12, x: 0, y: 6)
+
+            // 支出卡片
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("本月支出")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.9))
+                    Spacer()
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+
+                Spacer()
+
+                Text(String(format: "¥%.2f", appState.monthlyExpense))
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+
+                Text(currentMonthText)
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                ZStack {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.35, green: 0.45, blue: 0.95),
+                            Color(red: 0.25, green: 0.35, blue: 0.85)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    GeometryReader { geo in
+                        Circle()
+                            .fill(.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .offset(x: geo.size.width - 50, y: -20)
+                    }
+                }
+            )
+            .cornerRadius(20)
+            .shadow(color: Color(red: 0.35, green: 0.45, blue: 0.95).opacity(0.4), radius: 12, x: 0, y: 6)
         }
+        .frame(height: 180)
+    }
+
+    // 预算卡片（用于横向滚动）
+    private var budgetCard: some View {
+        BudgetProgressCard(
+            expense: appState.monthlyExpense,
+            budget: appState.monthlyBudget,
+            budgetUsagePercent: (appState.monthlyBudget > 0 ? min((appState.monthlyExpense / appState.monthlyBudget) * 100, 100) : 0),
+            remainingBudget: max(appState.monthlyBudget - appState.monthlyExpense, 0)
+        )
     }
 
     // 交易列表
