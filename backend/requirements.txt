@@ -1,0 +1,14 @@
+# FastAPI核心
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Pydantic配置
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# 图片处理
+Pillow==10.1.0
+
+# 依赖引擎（需要安装engine目录的依赖）
+# 运行: pip install -r ../engine/requirements.txt
