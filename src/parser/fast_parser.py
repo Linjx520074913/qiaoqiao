@@ -93,11 +93,11 @@ class FastBillParser:
 
             logger.info(f"Fast parsing (text length: {len(ocr_text)})")
 
-            # 调用 LLM - 使用更低温度和更少 token
+            # 调用 LLM - 使用更低温度和优化的 token 限制
             json_output = self.llm_engine.generate_json(
                 prompt=prompt,
                 temperature=0.0,  # 最低温度，更快
-                max_tokens=1024,  # 减少输出长度
+                max_tokens=512,  # 优化：典型输出 400 tokens，512 足够且更快
             )
 
             # 添加原始文本（在清理之前，以便清理函数可以访问）

@@ -15,6 +15,7 @@
                     注意: 复杂账单可能商品价格不准确
   --model <模型>    指定 LLM 模型（默认: qwen2.5:3b）
   --no-angle        关闭 OCR 角度检测（图片方向正确时）
+  --clean           清理 OCR 文本（移除 UI 元素，提升 5-10% 速度）
   --concurrent      启用并发解析（订单列表）
 """
 
@@ -30,7 +31,7 @@ logging.basicConfig(level=logging.WARNING)
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from src.ocr import RapidOCREngine
+from src.ocr import RapidOCREngine, clean_ocr_text
 from src.llm import OllamaEngine
 from src.parser.smart_parser import SmartParser
 from src.parser.multi_order_parser import MultiOrderParser
@@ -58,7 +59,7 @@ def parse_single_order(order_block, llm_engine, is_bank_statement=False):
 
 
 def scan_bill(image_path: str, model: str = "qwen2.5:3b",
-              use_angle_cls: bool = True, concurrent: bool = False):
+              use_angle_cls: bool = True, concurrent: bool = False, clean_text: bool = False):
     """快速扫描账单"""
 
     # 检查文件
@@ -83,7 +84,16 @@ def scan_bill(image_path: str, model: str = "qwen2.5:3b",
     if not ocr_result.success:
         print(f"✗ 失败: {ocr_result.error_message}")
         return
-    print(f"✓ ({times['ocr']:.2f}s, {len(ocr_result.lines)}行, {ocr_result.avg_score:.1%})")
+
+    # 文本清理（可选）
+    if clean_text:
+        original_len = len(ocr_result.text)
+        ocr_result.text = clean_ocr_text(ocr_result.text)
+        cleaned_len = len(ocr_result.text)
+        reduction = (original_len - cleaned_len) / original_len * 100
+        print(f"✓ ({times['ocr']:.2f}s, {len(ocr_result.lines)}行, {ocr_result.avg_score:.1%}, 文本↓{reduction:.0f}%)")
+    else:
+        print(f"✓ ({times['ocr']:.2f}s, {len(ocr_result.lines)}行, {ocr_result.avg_score:.1%})")
 
     # 初始化 LLM
     print("[ 2/5 ] 初始化 LLM...", end=" ", flush=True)
@@ -320,12 +330,13 @@ def main():
         print("\n选项:")
         print("  --fast            快速模式（速度优先，适合简单账单）")
         print("  --model <模型>    指定 LLM 模型（默认: qwen2.5:3b）")
-        print("  --concurrent      启用并发解析订单列表")
         print("  --no-angle        关闭 OCR 角度检测（图片方向正确时更快）")
+        print("  --clean           清理 OCR 文本（移除 UI 元素，提升 5-10% 速度）")
+        print("  --concurrent      启用并发解析订单列表")
         print("\n高级示例:")
         print("  python3 scan_bill.py invoice.png --model qwen2.5:7b")
         print("  python3 scan_bill.py list.jpg --fast --concurrent")
-        print("  python3 scan_bill.py order.jpg --no-angle")
+        print("  python3 scan_bill.py order.jpg --no-angle --clean  # 组合优化")
         print("\n特性:")
         print("  ✓ 自动识别单个订单或订单列表")
         print("  ✓ 智能分离和解析多个订单")
@@ -363,7 +374,10 @@ def main():
     if '--no-angle' in args:
         use_angle_cls = False
 
-    scan_bill(image, model, use_angle_cls, concurrent)
+    # OCR 文本清理
+    clean_text = '--clean' in args
+
+    scan_bill(image, model, use_angle_cls, concurrent, clean_text)
 
 
 if __name__ == "__main__":

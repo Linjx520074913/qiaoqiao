@@ -8,7 +8,7 @@ echo "=========================================="
 echo ""
 
 # 默认配置
-MODEL=${MODEL:-"mistralai/Mistral-7B-Instruct-v0.2"}
+MODEL=${MODEL:-"Qwen/Qwen2.5-3B-Instruct"}
 HOST=${HOST:-"0.0.0.0"}
 PORT=${PORT:-8000}
 GPU_MEMORY_UTILIZATION=${GPU_MEMORY_UTILIZATION:-0.9}
@@ -21,9 +21,9 @@ echo "  GPU 内存利用率: $GPU_MEMORY_UTILIZATION"
 echo ""
 
 # 检查 vLLM 是否安装
-if ! python -c "import vllm" 2>/dev/null; then
+if ! python3 -c "import vllm" 2>/dev/null; then
     echo "❌ vLLM 未安装"
-    echo "请运行: pip install vllm"
+    echo "请运行: pip3 install vllm"
     exit 1
 fi
 
@@ -34,7 +34,7 @@ echo "启动 vLLM 服务..."
 echo ""
 
 # 启动 vLLM OpenAI 兼容服务器
-python -m vllm.entrypoints.openai.api_server \
+python3 -m vllm.entrypoints.openai.api_server \
     --model "$MODEL" \
     --host "$HOST" \
     --port "$PORT" \
