@@ -61,10 +61,22 @@ class FastBillParser:
 
 输出 JSON："""
 
+    # 极简提示词（仅提取关键信息，跳过商品明细）
+    SUMMARY_PROMPT_TEMPLATE = """从文本提取账单关键信息，输出 JSON。
+
+字段：seller_name（商家）, total_amount（总金额）, invoice_number（订单号）, invoice_date（日期）
+金额为纯数字，未知为 null。
+
+文本：
+{text}
+
+JSON："""
+
     def __init__(
         self,
         llm_engine: OllamaEngine,
         validate_output: bool = False,  # 快速模式默认不验证
+        skip_items: bool = False,  # 是否跳过商品明细
     ):
         """
         初始化快速解析器
@@ -72,10 +84,13 @@ class FastBillParser:
         Args:
             llm_engine: LLM 推理引擎
             validate_output: 是否验证输出（关闭以提升速度）
+            skip_items: 是否跳过商品明细（仅提取总金额等关键信息）
         """
         self.llm_engine = llm_engine
         self.validate_output = validate_output
-        logger.info("FastBillParser initialized (optimized for speed)")
+        self.skip_items = skip_items
+        mode = "summary mode" if skip_items else "optimized for speed"
+        logger.info(f"FastBillParser initialized ({mode})")
 
     def parse(self, ocr_text: str) -> InvoiceParseResult:
         """
@@ -88,16 +103,21 @@ class FastBillParser:
             账单解析结果
         """
         try:
-            # 构建精简提示词
-            prompt = self.FAST_PROMPT_TEMPLATE.format(text=ocr_text)
-
-            logger.info(f"Fast parsing (text length: {len(ocr_text)})")
+            # 根据模式选择提示词和 max_tokens
+            if self.skip_items:
+                prompt = self.SUMMARY_PROMPT_TEMPLATE.format(text=ocr_text[:300])
+                max_tokens = 100  # 极简输出
+                logger.info(f"Summary parsing (text length: {len(ocr_text)})")
+            else:
+                prompt = self.FAST_PROMPT_TEMPLATE.format(text=ocr_text)
+                max_tokens = 512  # 标准输出
+                logger.info(f"Fast parsing (text length: {len(ocr_text)})")
 
             # 调用 LLM - 使用更低温度和优化的 token 限制
             json_output = self.llm_engine.generate_json(
                 prompt=prompt,
                 temperature=0.0,  # 最低温度，更快
-                max_tokens=512,  # 优化：典型输出 400 tokens，512 足够且更快
+                max_tokens=max_tokens,
             )
 
             # 添加原始文本（在清理之前，以便清理函数可以访问）

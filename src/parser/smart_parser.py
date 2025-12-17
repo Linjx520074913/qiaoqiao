@@ -117,21 +117,24 @@ class SmartParser:
         BillType.UNKNOWN: ParserMode.FAST,               # 未知用快速模式
     }
 
-    def __init__(self, llm_engine: OllamaEngine):
+    def __init__(self, llm_engine: OllamaEngine, skip_items: bool = False):
         """
         初始化智能解析器
 
         Args:
             llm_engine: LLM 推理引擎
+            skip_items: 是否跳过商品明细（仅提取总金额等关键信息）
         """
         self.llm_engine = llm_engine
+        self.skip_items = skip_items
 
         # 预初始化三种解析器
         self.standard_parser = BillParser(llm_engine, use_few_shot=True)
-        self.fast_parser = FastBillParser(llm_engine)
+        self.fast_parser = FastBillParser(llm_engine, skip_items=skip_items)
         self.hybrid_parser = HybridParser(llm_engine)
 
-        logger.info("SmartParser initialized (auto mode selection)")
+        mode = " (summary mode)" if skip_items else ""
+        logger.info(f"SmartParser initialized (auto mode selection){mode}")
 
     def parse(self, ocr_text: str, force_mode: Optional[ParserMode] = None) -> InvoiceParseResult:
         """

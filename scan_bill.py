@@ -39,13 +39,13 @@ from src.parser.fast_parser import FastBillParser
 from src.parser.bank_parser import BankStatementParser
 
 
-def parse_single_order(order_block, llm_engine, is_bank_statement=False):
+def parse_single_order(order_block, llm_engine, is_bank_statement=False, skip_items=False):
     """解析单个订单（用于并发）"""
     if is_bank_statement:
         parser = BankStatementParser()
         result = parser.parse(order_block.text)
     else:
-        parser = FastBillParser(llm_engine)
+        parser = FastBillParser(llm_engine, skip_items=skip_items)
         result = parser.parse(order_block.text)
 
     # 添加状态信息
@@ -60,7 +60,8 @@ def parse_single_order(order_block, llm_engine, is_bank_statement=False):
 
 def scan_bill(image_path: str, model: str = "qwen2.5:3b",
               use_angle_cls: bool = True, concurrent: bool = False,
-              clean_text: bool = False, format_text: bool = False):
+              clean_text: bool = False, format_text: bool = False,
+              skip_items: bool = False):
     """快速扫描账单"""
 
     # 检查文件
@@ -107,7 +108,7 @@ def scan_bill(image_path: str, model: str = "qwen2.5:3b",
     # 检测是否是订单列表
     print("[ 3/5 ] 检测订单类型...", end=" ", flush=True)
     t = time.time()
-    multi_parser = MultiOrderParser(llm)
+    multi_parser = MultiOrderParser(llm, skip_items=skip_items)
     is_list, list_conf = multi_parser.is_order_list(ocr_result.text)
     times['detect_type'] = time.time() - t
 
@@ -144,7 +145,7 @@ def scan_bill(image_path: str, model: str = "qwen2.5:3b",
 
             with ThreadPoolExecutor(max_workers=min(len(order_blocks), 4)) as executor:
                 futures = {
-                    executor.submit(parse_single_order, block, llm, is_bank_statement): i
+                    executor.submit(parse_single_order, block, llm, is_bank_statement, skip_items): i
                     for i, block in enumerate(order_blocks)
                 }
 
@@ -181,7 +182,7 @@ def scan_bill(image_path: str, model: str = "qwen2.5:3b",
         # 单个订单处理
         print("[ 4/5 ] 检测账单类型...", end=" ", flush=True)
         t = time.time()
-        parser = SmartParser(llm)
+        parser = SmartParser(llm, skip_items=skip_items)
         bill_type, conf, mode = parser.detect_type_only(ocr_result.text)
         times['detect'] = time.time() - t
         print(f"✓ ({times['detect']:.2f}s) -> {bill_type} ({conf:.0%}, {mode})")
@@ -334,13 +335,15 @@ def main():
         print("  --model <模型>    指定 LLM 模型（默认: qwen2.5:3b）")
         print("  --no-angle        关闭 OCR 角度检测（图片方向正确时更快）")
         print("  --clean           清理 OCR 文本（移除 UI 元素，提升 5-10% 速度）")
-        print("  --format          格式化 OCR 文本（合并商品信息，提升 20-30% 速度）⭐")
+        print("  --format          格式化 OCR 文本（合并商品信息，提升 20-30% 速度）⚠️ 可能漏项")
+        print("  --no-items        不识别商品明细（仅总金额，提升 50-60% 速度）⚡")
         print("  --concurrent      启用并发解析订单列表")
         print("\n高级示例:")
         print("  python3 scan_bill.py invoice.png --model qwen2.5:7b")
         print("  python3 scan_bill.py list.jpg --fast --concurrent")
-        print("  python3 scan_bill.py order.jpg --no-angle --clean  # 组合优化")
-        print("  python3 scan_bill.py order.jpg --no-angle --format  # 极速优化 ⭐")
+        print("  python3 scan_bill.py order.jpg --no-angle --clean  # 准确+快速 ✓")
+        print("  python3 scan_bill.py order.jpg --no-angle --format  # 极速（可能漏项）")
+        print("  python3 scan_bill.py order.jpg --no-angle --no-items  # 只要总金额 ⚡")
         print("\n特性:")
         print("  ✓ 自动识别单个订单或订单列表")
         print("  ✓ 智能分离和解析多个订单")
@@ -384,7 +387,10 @@ def main():
     # 文本格式化
     format_text = '--format' in args
 
-    scan_bill(image, model, use_angle_cls, concurrent, clean_text, format_text)
+    # 跳过商品明细
+    skip_items = '--no-items' in args
+
+    scan_bill(image, model, use_angle_cls, concurrent, clean_text, format_text, skip_items)
 
 
 if __name__ == "__main__":

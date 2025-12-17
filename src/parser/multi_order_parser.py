@@ -50,16 +50,19 @@ class MultiOrderParser:
         '待收货': 'pending_receipt',
     }
 
-    def __init__(self, llm_engine: OllamaEngine):
+    def __init__(self, llm_engine: OllamaEngine, skip_items: bool = False):
         """
         初始化多订单解析器
 
         Args:
             llm_engine: LLM 推理引擎
+            skip_items: 是否跳过商品明细（仅提取总金额等关键信息）
         """
         self.llm_engine = llm_engine
-        self.parser = FastBillParser(llm_engine)
-        logger.info("MultiOrderParser initialized")
+        self.skip_items = skip_items
+        self.parser = FastBillParser(llm_engine, skip_items=skip_items)
+        mode = " (summary mode)" if skip_items else ""
+        logger.info(f"MultiOrderParser initialized{mode}")
 
     def is_order_list(self, text: str) -> Tuple[bool, float]:
         """
