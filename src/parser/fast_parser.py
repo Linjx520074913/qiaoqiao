@@ -25,7 +25,36 @@ class FastBillParser:
 3. 金额必须是纯数字（如 16.2），不要货币符号
 4. 数量必须是纯数字（如 1），不要 "x" 前缀
 5. 无法确定的字段设为 null
-6. 必须输出有效的 JSON，不要其他文字
+6. total_amount 提取规则：
+   - 查找"合计"、"实付"、"应付"、"总计"后面的最后一个金额（正数）
+   - 负数金额是优惠，不要作为 total_amount
+   - 优先级：合计 > 实付 > 应付 > 总计 > 商品总价
+   - "到手"金额是优惠后价格，不要用作 total_amount
+7. seller_name 提取完整的门店/商家名称
+   - 提取完整名称（如：杨氏手撕烤鸭（丁头村店））
+   - 不要仅提取分店名（如仅"丁头村店"不完整）
+   - 不要提取：保险名称（如准时保、食安险）
+   - 不要提取：平台名称（如美团、饿了么）
+   - 不要提取：配送服务名称
+8. items 提取规则：
+   - 只提取实际商品名称和价格
+   - 如果看到"份量"、"口味"、"备注"等关键词，这是商品说明，不是独立商品
+   - 看到"数量×N"或"商品总价"时，前面的商品信息为一组
+   - 商品 amount 是原价（商品总价），不是优惠后价格（到手价）
+   - 一个商品只能有一个 amount，不要重复计算
+9. invoice_type 提取订单类型（如：外卖、咖啡、发票等），不要提取金额标签
+10. 必须输出有效的 JSON，不要其他文字
+
+示例：
+如果文本包含：
+手撕烤鸭半只
+到手￥7.87
+份量，孜然辣椒
+￥26.9
+数量×1
+
+应提取为：{{"items": [{{"name": "手撕烤鸭半只", "quantity": 1, "amount": 26.9}}]}}
+（份量是说明，不是独立商品）
 
 输入文本：
 {text}
@@ -71,8 +100,11 @@ class FastBillParser:
                 max_tokens=1024,  # 减少输出长度
             )
 
-            # 添加原始文本
+            # 添加原始文本（在清理之前，以便清理函数可以访问）
             json_output["raw_text"] = ocr_text
+
+            # 清理数据（移除货币符号和单位）
+            json_output = self._clean_output(json_output)
 
             # 转换为 Invoice 对象
             invoice = Invoice(**json_output)
@@ -89,6 +121,107 @@ class FastBillParser:
                 success=False,
                 error_message=str(e),
             )
+
+    def _clean_output(self, data: dict) -> dict:
+        """
+        清理 LLM 输出，移除货币符号和单位
+
+        Args:
+            data: LLM 输出的字典
+
+        Returns:
+            清理后的字典
+        """
+        import re
+
+        def clean_number(value):
+            """清理数字字符串"""
+            if value is None:
+                return None
+            if isinstance(value, (int, float)):
+                return value
+            if isinstance(value, str):
+                # 移除货币符号: ￥ ¥ $ €
+                value = re.sub(r'[￥¥$€]', '', value)
+                # 移除单位: × x 份 件 个
+                value = re.sub(r'[×x份件个]', '', value)
+                # 移除空格
+                value = value.strip()
+                # 尝试转换为数字
+                try:
+                    return float(value) if '.' in value else int(value)
+                except:
+                    return None
+            return None
+
+        # 清理顶层金额字段
+        for field in ['total_amount', 'subtotal', 'tax_amount']:
+            if field in data and data[field]:
+                data[field] = clean_number(data[field])
+
+        # 清理商品列表
+        if 'items' in data and isinstance(data['items'], list):
+            for item in data['items']:
+                if isinstance(item, dict):
+                    for field in ['quantity', 'unit_price', 'amount']:
+                        if field in item and item[field]:
+                            item[field] = clean_number(item[field])
+
+            # 去重：只删除明确是规格说明的项（包含特定关键词）
+            if len(data['items']) > 1:
+                deduplicated = []
+                for item in data['items']:
+                    name = item.get('name', '')
+                    # 如果商品名包含"份量"、"口味"等关键词，这是说明不是商品
+                    if any(keyword in name for keyword in ['份量', '口味', '备注', '规格', '加料', '温度']):
+                        continue
+                    deduplicated.append(item)
+
+                # 如果去重后还有商品，使用去重后的列表
+                if deduplicated:
+                    data['items'] = deduplicated
+
+        # 修复总金额：优先从原始文本提取"合计/实付/应付"（更可靠）
+        if 'total_amount' in data:
+            raw_text = data.get('raw_text', '')
+
+            # 始终尝试从原始文本提取总金额（比 LLM 计算更准确）
+            extracted_amount = None
+
+            # 按优先级尝试提取: 实付 > 应付 > 合计
+            # (实付最准确，合计可能被误匹配为"优惠合计")
+            if extracted_amount is None:
+                patterns = [
+                    r'实付[：:\s]*[￥¥]?([\d.]+)',  # 实付: ¥9.9
+                    r'应付[：:\s]*[￥¥]?([\d.]+)',  # 应付: ¥34.6
+                ]
+                for pattern in patterns:
+                    matches = re.findall(pattern, raw_text)
+                    if matches:
+                        extracted_amount = float(matches[-1])
+                        break
+
+            # 如果还没找到，尝试"合计"（需要特殊处理，避免误匹配"优惠合计"）
+            if extracted_amount is None:
+                # 只匹配不是以"优惠"开头的"合计"
+                match = re.search(r'(?<!优惠)(?<!优惠券)(?<!优惠减免)合计[^\n]*\n[^\n]*', raw_text)
+                if match:
+                    section = match.group()
+                    numbers = re.findall(r'[¥￥]([\d.]+)', section)
+                    if numbers:
+                        extracted_amount = float(numbers[-1])
+
+            # 如果从文本提取成功，优先使用提取的金额
+            if extracted_amount is not None and extracted_amount > 0:
+                data['total_amount'] = extracted_amount
+            # 否则，如果 LLM 返回的金额有问题（负数或 None），使用商品总价
+            elif data['total_amount'] is None or (isinstance(data['total_amount'], (int, float)) and data['total_amount'] <= 0):
+                if 'items' in data and data['items']:
+                    total = sum(item.get('amount', 0) or 0 for item in data['items'])
+                    if total > 0:
+                        data['total_amount'] = total
+
+        return data
 
     def parse_batch(self, ocr_texts: list[str]) -> list[InvoiceParseResult]:
         """批量快速解析"""

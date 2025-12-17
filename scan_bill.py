@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
 """
-快速账单扫描工具
-用法: python3 scan_bill.py <图片路径>
+智能账单扫描工具
+用法: python3 scan_bill.py <图片路径> [选项]
 支持单个订单和订单列表
+
+默认模式（推荐）:
+  - 使用 qwen2.5:3b 模型，识别最精准
+  - 适合复杂账单（如组合商品、多项明细）
+  - 速度: ~6-8秒
+
+优化选项:
+  --fast            快速模式（速度优先，适合简单账单）
+                    使用 qwen2.5:1.5b 小模型，速度 ~3-4秒
+                    注意: 复杂账单可能商品价格不准确
+  --model <模型>    指定 LLM 模型（默认: qwen2.5:3b）
+  --no-angle        关闭 OCR 角度检测（图片方向正确时）
+  --concurrent      启用并发解析（订单列表）
 """
 
 import sys
@@ -10,6 +23,7 @@ import os
 import time
 import logging
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 设置日志级别为 WARNING，隐藏 INFO 日志
 logging.basicConfig(level=logging.WARNING)
@@ -20,9 +34,31 @@ from src.ocr import RapidOCREngine
 from src.llm import OllamaEngine
 from src.parser.smart_parser import SmartParser
 from src.parser.multi_order_parser import MultiOrderParser
+from src.parser.fast_parser import FastBillParser
+from src.parser.bank_parser import BankStatementParser
 
 
-def scan_bill(image_path: str, model: str = "qwen2.5:3b"):
+def parse_single_order(order_block, llm_engine, is_bank_statement=False):
+    """解析单个订单（用于并发）"""
+    if is_bank_statement:
+        parser = BankStatementParser()
+        result = parser.parse(order_block.text)
+    else:
+        parser = FastBillParser(llm_engine)
+        result = parser.parse(order_block.text)
+
+    # 添加状态信息
+    if result.success and result.invoice:
+        if not result.invoice.remarks:
+            result.invoice.remarks = f"订单状态: {order_block.status}"
+        else:
+            result.invoice.remarks += f" | 订单状态: {order_block.status}"
+
+    return result, order_block.status
+
+
+def scan_bill(image_path: str, model: str = "qwen2.5:3b",
+              use_angle_cls: bool = True, concurrent: bool = False):
     """快速扫描账单"""
 
     # 检查文件
@@ -40,7 +76,7 @@ def scan_bill(image_path: str, model: str = "qwen2.5:3b"):
     # OCR 提取
     print("[ 1/5 ] OCR 文本提取...", end=" ", flush=True)
     t = time.time()
-    ocr = RapidOCREngine(use_angle_cls=True, print_verbose=False)
+    ocr = RapidOCREngine(use_angle_cls=use_angle_cls, print_verbose=False)
     ocr_result = ocr.extract_text(image_path)
     times['ocr'] = time.time() - t
 
@@ -79,9 +115,50 @@ def scan_bill(image_path: str, model: str = "qwen2.5:3b"):
 
         print("[ 5/5 ] 解析订单列表...", end=" ", flush=True)
         t = time.time()
-        results, stats = multi_parser.parse_order_list(ocr_result.text)
+
+        # 检测是否是银行流水
+        is_bank_statement = multi_parser._is_bank_statement_list(ocr_result.text)
+
+        if concurrent and len(order_blocks) > 1:
+            # 并发解析
+            results = []
+            stats = {
+                'total_orders': len(order_blocks),
+                'completed': 0,
+                'cancelled': 0,
+                'in_progress': 0,
+                'other': 0,
+            }
+
+            with ThreadPoolExecutor(max_workers=min(len(order_blocks), 4)) as executor:
+                futures = {
+                    executor.submit(parse_single_order, block, llm, is_bank_statement): i
+                    for i, block in enumerate(order_blocks)
+                }
+
+                temp_results = [None] * len(order_blocks)
+                for future in as_completed(futures):
+                    idx = futures[future]
+                    result, status = future.result()
+                    temp_results[idx] = (result, status)
+
+                for result, status in temp_results:
+                    results.append(result)
+                    if status == '已完成':
+                        stats['completed'] += 1
+                    elif status == '已取消':
+                        stats['cancelled'] += 1
+                    elif status in ['进行中', '待支付', '待发货', '待收货']:
+                        stats['in_progress'] += 1
+                    else:
+                        stats['other'] += 1
+        else:
+            # 串行解析
+            results, stats = multi_parser.parse_order_list(ocr_result.text)
+
         times['parse'] = time.time() - t
-        print(f"✓ ({times['parse']:.2f}s)")
+        mode_str = "并发" if concurrent and len(order_blocks) > 1 else "串行"
+        print(f"✓ ({times['parse']:.2f}s, {mode_str})")
 
         times['total'] = time.time() - total_start
 
@@ -226,21 +303,67 @@ def display_order_list_results(results, stats, times):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("用法: python3 scan_bill.py <图片路径> [模型]")
-        print("\n示例:")
+    if len(sys.argv) < 2 or '--help' in sys.argv or '-h' in sys.argv:
+        print("智能账单扫描工具 - KAPI")
+        print("=" * 60)
+        print("\n用法: python3 scan_bill.py <图片路径> [选项]")
+        print("\n📌 推荐用法（标准模式 - 最精准）:")
         print("  python3 scan_bill.py bill.jpg")
-        print("  python3 scan_bill.py invoice.png qwen2.5:7b")
+        print("  - 使用 qwen2.5:3b 模型")
+        print("  - 适合复杂账单（组合商品、多项明细）")
+        print("  - 速度: ~6-8秒")
+        print("\n⚡ 快速模式（速度优先）:")
+        print("  python3 scan_bill.py bill.jpg --fast")
+        print("  - 使用 qwen2.5:1.5b 小模型")
+        print("  - 速度: ~3-4秒")
+        print("  - 注意: 复杂账单的商品价格可能不准确")
+        print("\n选项:")
+        print("  --fast            快速模式（速度优先，适合简单账单）")
+        print("  --model <模型>    指定 LLM 模型（默认: qwen2.5:3b）")
+        print("  --concurrent      启用并发解析订单列表")
+        print("  --no-angle        关闭 OCR 角度检测（图片方向正确时更快）")
+        print("\n高级示例:")
+        print("  python3 scan_bill.py invoice.png --model qwen2.5:7b")
+        print("  python3 scan_bill.py list.jpg --fast --concurrent")
+        print("  python3 scan_bill.py order.jpg --no-angle")
         print("\n特性:")
         print("  ✓ 自动识别单个订单或订单列表")
         print("  ✓ 智能分离和解析多个订单")
+        print("  ✓ 银行流水瞬间识别（无需 LLM）")
         print("  ✓ 支持 20+ 个餐饮/电商平台")
         sys.exit(1)
 
-    image = sys.argv[1]
-    model = sys.argv[2] if len(sys.argv) > 2 else "qwen2.5:3b"
+    # 解析参数
+    args = sys.argv[1:]
+    image = args[0]
 
-    scan_bill(image, model)
+    # 默认配置
+    model = "qwen2.5:3b"
+    use_angle_cls = True
+    concurrent = False
+
+    # 快速模式
+    if '--fast' in args:
+        model = "qwen2.5:1.5b"
+        use_angle_cls = False
+        concurrent = True
+        args.remove('--fast')
+
+    # 自定义模型
+    if '--model' in args:
+        idx = args.index('--model')
+        if idx + 1 < len(args):
+            model = args[idx + 1]
+
+    # 并发模式
+    if '--concurrent' in args:
+        concurrent = True
+
+    # 关闭角度检测
+    if '--no-angle' in args:
+        use_angle_cls = False
+
+    scan_bill(image, model, use_angle_cls, concurrent)
 
 
 if __name__ == "__main__":
