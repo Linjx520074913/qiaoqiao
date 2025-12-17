@@ -52,14 +52,24 @@ class OCRTextCleaner:
         r'^[\u4e00-\u9fff]{1}$',  # 单个汉字（保留2+字）
     ]
 
-    def __init__(self, aggressive: bool = False):
+    # 无关信息模式
+    IRRELEVANT_PATTERNS = [
+        r'^\d{1,2}:\d{2}$',  # 时间 (11:36)
+        r'^取餐码\d+$',       # 取餐码
+        r'^[A-Z]{2,3}$',     # CN, m 等缩写
+        r'^\d{1,2}$',        # 纯数字（如 29）
+    ]
+
+    def __init__(self, aggressive: bool = False, format_text: bool = False):
         """
         初始化清理器
 
         Args:
             aggressive: 激进模式（删除更多内容，可能影响准确性）
+            format_text: 文本格式化模式（合并商品信息，提升 LLM 理解速度）
         """
         self.aggressive = aggressive
+        self.format_text = format_text
 
     def clean(self, text: str) -> str:
         """
@@ -97,6 +107,10 @@ class OCRTextCleaner:
             if any(re.match(pattern, line) for pattern in self.MEANINGLESS_PATTERNS):
                 continue
 
+            # 跳过无关信息（时间、取餐码等）
+            if any(re.match(pattern, line) for pattern in self.IRRELEVANT_PATTERNS):
+                continue
+
             cleaned_lines.append(line)
 
         # 重新组合，移除多余空行
@@ -105,7 +119,81 @@ class OCRTextCleaner:
         # 合并多个连续换行
         cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
 
+        # 文本格式化（可选）
+        if self.format_text:
+            cleaned_text = self._format_text(cleaned_text)
+
         return cleaned_text.strip()
+
+    def _format_text(self, text: str) -> str:
+        """
+        格式化文本，合并商品信息行
+
+        将分散的商品信息（名称、数量、金额）合并到同一行
+        例如：
+        原味板烧鸡腿麦满分组合
+        1×小杯鲜萃咖啡
+        1份
+        ￥17
+
+        合并为：
+        原味板烧鸡腿麦满分组合 1份 ￥17
+        """
+        lines = text.split('\n')
+        formatted_lines = []
+        i = 0
+
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # 检查是否是商品名称行（长度 > 4 且不包含金额符号）
+            if len(line) > 4 and '￥' not in line and not re.match(r'^\d+[×x]', line):
+                # 尝试合并后续的数量和金额行
+                merged = line
+                j = i + 1
+
+                # 向前看最多 4 行，收集数量和金额信息
+                quantity_found = False
+                amount_found = False
+
+                while j < min(i + 5, len(lines)) and (not quantity_found or not amount_found):
+                    next_line = lines[j].strip()
+
+                    # 跳过商品详情行（如 "1×小杯鲜萃咖啡"）
+                    if re.match(r'^\d+[×x]', next_line) and len(next_line) > 4:
+                        j += 1
+                        continue
+
+                    # 查找数量（如 "1份", "2个"）
+                    if not quantity_found and re.search(r'^\d+[份个件]$', next_line):
+                        merged += ' ' + next_line
+                        quantity_found = True
+                        j += 1
+                        continue
+
+                    # 查找金额（如 "￥17", "17.5"）
+                    if not amount_found and (next_line.startswith('￥') or re.match(r'^\d+\.?\d*$', next_line)):
+                        # 确保是合理的金额（不是年份等）
+                        if next_line.startswith('￥') or (len(next_line) <= 6 and '.' in next_line):
+                            merged += ' ' + next_line
+                            amount_found = True
+                            j += 1
+                            continue
+
+                    # 如果当前行看起来是新的商品名称或关键字段，停止合并
+                    if len(next_line) > 4 or next_line in ['商品小计', '合计', '总计', '实付', '应付']:
+                        break
+
+                    j += 1
+
+                formatted_lines.append(merged)
+                i = j
+            else:
+                # 不是商品名称行，直接添加
+                formatted_lines.append(line)
+                i += 1
+
+        return '\n'.join(formatted_lines)
 
     def get_stats(self, original: str, cleaned: str) -> dict:
         """
@@ -135,16 +223,17 @@ class OCRTextCleaner:
         }
 
 
-def clean_ocr_text(text: str, aggressive: bool = False) -> str:
+def clean_ocr_text(text: str, aggressive: bool = False, format_text: bool = False) -> str:
     """
     便捷函数：清理 OCR 文本
 
     Args:
         text: 原始 OCR 文本
         aggressive: 激进模式
+        format_text: 文本格式化模式（合并商品信息）
 
     Returns:
         清理后的文本
     """
-    cleaner = OCRTextCleaner(aggressive=aggressive)
+    cleaner = OCRTextCleaner(aggressive=aggressive, format_text=format_text)
     return cleaner.clean(text)
