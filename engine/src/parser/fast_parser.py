@@ -61,12 +61,32 @@ class FastBillParser:
 
 输出 JSON："""
 
-    # 极简提示词（仅提取关键信息，跳过商品明细）
-    SUMMARY_PROMPT_TEMPLATE = """从文本提取账单关键信息，输出 JSON。
+    # 极简提示词（仅提取商家名和金额）
+    SUMMARY_PROMPT_TEMPLATE = """从文本提取商家名和金额，输出 JSON。
 
-字段：seller_name（商家）, total_amount（总金额）, invoice_number（订单号）, invoice_date（日期时间）
-- 金额为纯数字，未知为 null
-- 日期格式示例："2024-12-17 14:30" 或 "12月17日 14:30"，提取任何日期或时间信息
+字段：
+- seller_name: 商家品牌名称
+- total_amount: 总金额
+
+seller_name 规则：
+1. 查找"下单时间"后面的名称（最准确的商家名）
+2. 提取品牌主体，不要门店编号
+3. 错误示例：
+   - ✗ "南山智谷店（No.10649）" - 这只是门店位置
+   - ✓ "luckincoffee小程序" - 这才是商家
+   - ✗ "杨氏手撕烤鸭（丁头村店）" - 如果末尾有更准确的品牌名，优先用品牌名
+   - ✓ "杨氏手撕烤鸭" - 品牌主体
+
+total_amount 规则：
+提取"实付"或"合计"后的金额（纯数字）
+
+示例：
+文本中有：
+"南山智谷店（No.10649）
+...
+下单时间：2025-12-0819:14luckincoffee小程序"
+
+应提取：{{"seller_name": "luckincoffee小程序", "total_amount": 9.9}}
 
 文本：
 {text}
@@ -106,8 +126,9 @@ JSON："""
         try:
             # 根据模式选择提示词和 max_tokens
             if self.skip_items:
-                prompt = self.SUMMARY_PROMPT_TEMPLATE.format(text=ocr_text[:300])
-                max_tokens = 100  # 极简输出
+                # 使用完整文本以确保能找到商家名（可能在末尾）
+                prompt = self.SUMMARY_PROMPT_TEMPLATE.format(text=ocr_text)
+                max_tokens = 100  # 给 LLM 足够空间理解提示词
                 logger.info(f"Summary parsing (text length: {len(ocr_text)})")
             else:
                 prompt = self.FAST_PROMPT_TEMPLATE.format(text=ocr_text)
