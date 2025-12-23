@@ -62,9 +62,8 @@ struct Performance: Codable {
 class BillScanService {
     static let shared = BillScanService()
 
-    // 后端服务地址 - 使用你的 Mac 局域网 IP
-    // 确保 iPhone 和 Mac 在同一个 WiFi 网络下
-    private let baseURL = "http://10.9.190.86:8080"
+    // 后端服务地址 - 使用 Cloudflare Tunnel（支持外网访问）
+    private let baseURL = "https://scanning-zone-logos-richard.trycloudflare.com"
 
     private init() {}
 

@@ -12,7 +12,7 @@ struct ShowExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "显示消费卡片"
     static var description = IntentDescription("扫描账单图片并显示消费提醒卡片")
 
-    // 关键：设置为后台运行，不打开应用
+    // 后台运行，不打开应用
     static var openAppWhenRun: Bool = false
 
     // 接收图片参数（必需）
@@ -30,6 +30,7 @@ struct ShowExpenseIntent: AppIntent {
         let imageData = image.data
         guard let uiImage = UIImage(data: imageData) else {
             print("❌ [Intent] 图片转换失败")
+
             return .result(
                 dialog: IntentDialog("图片格式错误，无法解析"),
                 view: ExpenseSnippetView(
