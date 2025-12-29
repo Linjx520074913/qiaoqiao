@@ -17,7 +17,9 @@ struct AppIntentApp: App {
     }
 }
 
-// 注册 App Shortcuts，让快捷指令 App 能发现我们的 Intent
+// INIntent 不需要 AppShortcuts，通过 .intentdefinition 文件配置
+// 注释掉旧的 AppIntent 配置
+/*
 struct AppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -31,6 +33,7 @@ struct AppShortcuts: AppShortcutsProvider {
         )
     }
 }
+*/
 
 // 注册 Live Activity Widget
 @available(iOS 16.1, *)

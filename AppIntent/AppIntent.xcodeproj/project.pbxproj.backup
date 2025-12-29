@@ -10,10 +10,6 @@
 		CB5D93942EFE8EE800F02156 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB5D93932EFE8EE800F02156 /* WidgetKit.framework */; };
 		CB5D93962EFE8EE800F02156 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB5D93952EFE8EE800F02156 /* SwiftUI.framework */; };
 		CB5D93A32EFE8EE900F02156 /* ExpenseActivityWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CB5D93912EFE8EE800F02156 /* ExpenseActivityWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		CB62F6402F02641900E61643 /* IntentsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB62F63F2F02641900E61643 /* IntentsUI.framework */; };
-		CB62F64A2F02641900E61643 /* ShowExpenseIntentUI.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CB62F63E2F02641900E61643 /* ShowExpenseIntentUI.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		CB62F6592F02690A00E61643 /* IntentsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB62F63F2F02641900E61643 /* IntentsUI.framework */; };
-		CB62F6632F02690A00E61643 /* ShowExpenseIntentExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CB62F6582F02690A00E61643 /* ShowExpenseIntentExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -23,20 +19,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = CB5D93902EFE8EE800F02156;
 			remoteInfo = ExpenseActivityWidgetExtension;
-		};
-		CB62F6482F02641900E61643 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CB6D398F2EF91466003BC8A1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CB62F63D2F02641900E61643;
-			remoteInfo = ShowExpenseIntentUI;
-		};
-		CB62F6612F02690A00E61643 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CB6D398F2EF91466003BC8A1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CB62F6572F02690A00E61643;
-			remoteInfo = ShowExpenseIntentExtension;
 		};
 		CB6D39A52EF91467003BC8A1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -61,8 +43,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				CB62F64A2F02641900E61643 /* ShowExpenseIntentUI.appex in Embed Foundation Extensions */,
-				CB62F6632F02690A00E61643 /* ShowExpenseIntentExtension.appex in Embed Foundation Extensions */,
 				CB5D93A32EFE8EE900F02156 /* ExpenseActivityWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -74,9 +54,6 @@
 		CB5D93912EFE8EE800F02156 /* ExpenseActivityWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ExpenseActivityWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB5D93932EFE8EE800F02156 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CB5D93952EFE8EE800F02156 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		CB62F63E2F02641900E61643 /* ShowExpenseIntentUI.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShowExpenseIntentUI.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		CB62F63F2F02641900E61643 /* IntentsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IntentsUI.framework; path = System/Library/Frameworks/IntentsUI.framework; sourceTree = SDKROOT; };
-		CB62F6582F02690A00E61643 /* ShowExpenseIntentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShowExpenseIntentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB6D39972EF91466003BC8A1 /* AppIntent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppIntent.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB6D39A42EF91467003BC8A1 /* AppIntentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppIntentTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CB6D39AE2EF91467003BC8A1 /* AppIntentUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppIntentUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,20 +67,6 @@
 			);
 			target = CB5D93902EFE8EE800F02156 /* ExpenseActivityWidgetExtension */;
 		};
-		CB62F64D2F02641900E61643 /* Exceptions for "ShowExpenseIntentUI" folder in "ShowExpenseIntentUI" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = CB62F63D2F02641900E61643 /* ShowExpenseIntentUI */;
-		};
-		CB62F6642F02690A00E61643 /* Exceptions for "ShowExpenseIntentExtension" folder in "ShowExpenseIntentExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = CB62F6572F02690A00E61643 /* ShowExpenseIntentExtension */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -113,22 +76,6 @@
 				CB5D93A42EFE8EE900F02156 /* Exceptions for "ExpenseActivityWidget" folder in "ExpenseActivityWidgetExtension" target */,
 			);
 			path = ExpenseActivityWidget;
-			sourceTree = "<group>";
-		};
-		CB62F6412F02641900E61643 /* ShowExpenseIntentUI */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				CB62F64D2F02641900E61643 /* Exceptions for "ShowExpenseIntentUI" folder in "ShowExpenseIntentUI" target */,
-			);
-			path = ShowExpenseIntentUI;
-			sourceTree = "<group>";
-		};
-		CB62F65A2F02690A00E61643 /* ShowExpenseIntentExtension */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				CB62F6642F02690A00E61643 /* Exceptions for "ShowExpenseIntentExtension" folder in "ShowExpenseIntentExtension" target */,
-			);
-			path = ShowExpenseIntentExtension;
 			sourceTree = "<group>";
 		};
 		CB6D39992EF91466003BC8A1 /* AppIntent */ = {
@@ -155,22 +102,6 @@
 			files = (
 				CB5D93962EFE8EE800F02156 /* SwiftUI.framework in Frameworks */,
 				CB5D93942EFE8EE800F02156 /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CB62F63B2F02641900E61643 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				CB62F6402F02641900E61643 /* IntentsUI.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CB62F6552F02690A00E61643 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				CB62F6592F02690A00E61643 /* IntentsUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -203,7 +134,6 @@
 			children = (
 				CB5D93932EFE8EE800F02156 /* WidgetKit.framework */,
 				CB5D93952EFE8EE800F02156 /* SwiftUI.framework */,
-				CB62F63F2F02641900E61643 /* IntentsUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -215,8 +145,6 @@
 				CB6D39A72EF91467003BC8A1 /* AppIntentTests */,
 				CB6D39B12EF91467003BC8A1 /* AppIntentUITests */,
 				CB5D93972EFE8EE800F02156 /* ExpenseActivityWidget */,
-				CB62F6412F02641900E61643 /* ShowExpenseIntentUI */,
-				CB62F65A2F02690A00E61643 /* ShowExpenseIntentExtension */,
 				CB5D93922EFE8EE800F02156 /* Frameworks */,
 				CB6D39982EF91466003BC8A1 /* Products */,
 			);
@@ -229,8 +157,6 @@
 				CB6D39A42EF91467003BC8A1 /* AppIntentTests.xctest */,
 				CB6D39AE2EF91467003BC8A1 /* AppIntentUITests.xctest */,
 				CB5D93912EFE8EE800F02156 /* ExpenseActivityWidgetExtension.appex */,
-				CB62F63E2F02641900E61643 /* ShowExpenseIntentUI.appex */,
-				CB62F6582F02690A00E61643 /* ShowExpenseIntentExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -260,50 +186,6 @@
 			productReference = CB5D93912EFE8EE800F02156 /* ExpenseActivityWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		CB62F63D2F02641900E61643 /* ShowExpenseIntentUI */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CB62F64E2F02641900E61643 /* Build configuration list for PBXNativeTarget "ShowExpenseIntentUI" */;
-			buildPhases = (
-				CB62F63A2F02641900E61643 /* Sources */,
-				CB62F63B2F02641900E61643 /* Frameworks */,
-				CB62F63C2F02641900E61643 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				CB62F6412F02641900E61643 /* ShowExpenseIntentUI */,
-			);
-			name = ShowExpenseIntentUI;
-			packageProductDependencies = (
-			);
-			productName = ShowExpenseIntentUI;
-			productReference = CB62F63E2F02641900E61643 /* ShowExpenseIntentUI.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
-		CB62F6572F02690A00E61643 /* ShowExpenseIntentExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CB62F6652F02690A00E61643 /* Build configuration list for PBXNativeTarget "ShowExpenseIntentExtension" */;
-			buildPhases = (
-				CB62F6542F02690A00E61643 /* Sources */,
-				CB62F6552F02690A00E61643 /* Frameworks */,
-				CB62F6562F02690A00E61643 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				CB62F65A2F02690A00E61643 /* ShowExpenseIntentExtension */,
-			);
-			name = ShowExpenseIntentExtension;
-			packageProductDependencies = (
-			);
-			productName = ShowExpenseIntentExtension;
-			productReference = CB62F6582F02690A00E61643 /* ShowExpenseIntentExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		CB6D39962EF91466003BC8A1 /* AppIntent */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CB6D39B82EF91467003BC8A1 /* Build configuration list for PBXNativeTarget "AppIntent" */;
@@ -317,8 +199,6 @@
 			);
 			dependencies = (
 				CB5D93A22EFE8EE900F02156 /* PBXTargetDependency */,
-				CB62F6492F02641900E61643 /* PBXTargetDependency */,
-				CB62F6622F02690A00E61643 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CB6D39992EF91466003BC8A1 /* AppIntent */,
@@ -389,12 +269,6 @@
 					CB5D93902EFE8EE800F02156 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					CB62F63D2F02641900E61643 = {
-						CreatedOnToolsVersion = 16.4;
-					};
-					CB62F6572F02690A00E61643 = {
-						CreatedOnToolsVersion = 16.4;
-					};
 					CB6D39962EF91466003BC8A1 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -426,28 +300,12 @@
 				CB6D39A32EF91467003BC8A1 /* AppIntentTests */,
 				CB6D39AD2EF91467003BC8A1 /* AppIntentUITests */,
 				CB5D93902EFE8EE800F02156 /* ExpenseActivityWidgetExtension */,
-				CB62F63D2F02641900E61643 /* ShowExpenseIntentUI */,
-				CB62F6572F02690A00E61643 /* ShowExpenseIntentExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		CB5D938F2EFE8EE800F02156 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CB62F63C2F02641900E61643 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CB62F6562F02690A00E61643 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -485,20 +343,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CB62F63A2F02641900E61643 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CB62F6542F02690A00E61643 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		CB6D39932EF91466003BC8A1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -528,16 +372,6 @@
 			target = CB5D93902EFE8EE800F02156 /* ExpenseActivityWidgetExtension */;
 			targetProxy = CB5D93A12EFE8EE900F02156 /* PBXContainerItemProxy */;
 		};
-		CB62F6492F02641900E61643 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CB62F63D2F02641900E61643 /* ShowExpenseIntentUI */;
-			targetProxy = CB62F6482F02641900E61643 /* PBXContainerItemProxy */;
-		};
-		CB62F6622F02690A00E61643 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CB62F6572F02690A00E61643 /* ShowExpenseIntentExtension */;
-			targetProxy = CB62F6612F02690A00E61643 /* PBXContainerItemProxy */;
-		};
 		CB6D39A62EF91467003BC8A1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CB6D39962EF91466003BC8A1 /* AppIntent */;
@@ -556,7 +390,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = ExpenseActivityWidget/ExpenseActivityWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DMR5SZUGP9;
@@ -584,7 +417,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = ExpenseActivityWidget/ExpenseActivityWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DMR5SZUGP9;
@@ -599,106 +431,6 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dm.AppIntent.ExpenseActivityWidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		CB62F64B2F02641900E61643 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DMR5SZUGP9;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShowExpenseIntentUI/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShowExpenseIntentUI;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dm.AppIntent.ShowExpenseIntentUI;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		CB62F64C2F02641900E61643 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DMR5SZUGP9;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShowExpenseIntentUI/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShowExpenseIntentUI;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dm.AppIntent.ShowExpenseIntentUI;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		CB62F6662F02690A00E61643 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DMR5SZUGP9;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShowExpenseIntentExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShowExpenseIntentExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dm.AppIntent.ShowExpenseIntentExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		CB62F6672F02690A00E61643 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DMR5SZUGP9;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShowExpenseIntentExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShowExpenseIntentExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dm.AppIntent.ShowExpenseIntentExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -976,24 +708,6 @@
 			buildConfigurations = (
 				CB5D93A62EFE8EE900F02156 /* Debug */,
 				CB5D93A72EFE8EE900F02156 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		CB62F64E2F02641900E61643 /* Build configuration list for PBXNativeTarget "ShowExpenseIntentUI" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CB62F64B2F02641900E61643 /* Debug */,
-				CB62F64C2F02641900E61643 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		CB62F6652F02690A00E61643 /* Build configuration list for PBXNativeTarget "ShowExpenseIntentExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CB62F6662F02690A00E61643 /* Debug */,
-				CB62F6672F02690A00E61643 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

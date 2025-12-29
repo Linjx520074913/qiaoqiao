@@ -1,0 +1,202 @@
+//
+//  IntentViewController.swift
+//  ShowExpenseIntentUI
+//
+//  Created by linjx on 2025/12/29.
+//
+
+import IntentsUI
+import UIKit
+
+class IntentViewController: UIViewController, INUIHostedViewControlling {
+
+    // MARK: - UI Elements
+    private let statusLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 20, weight: .medium)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let merchantLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 16, weight: .regular)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let amountLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 32, weight: .bold)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
+    private var dotAnimationTimer: Timer?
+    private var dotCount = 0
+
+    // App Group 标识符
+    private let appGroupIdentifier = "group.com.dm.AppIntent"
+
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        setupUI()
+        startMonitoringSharedData()
+    }
+
+    deinit {
+        dotAnimationTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Setup
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
+
+        // 添加子视图
+        view.addSubview(statusLabel)
+        view.addSubview(loadingIndicator)
+        view.addSubview(merchantLabel)
+        view.addSubview(amountLabel)
+
+        // 布局
+        NSLayoutConstraint.activate([
+            statusLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            loadingIndicator.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 12),
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+
+            merchantLabel.topAnchor.constraint(equalTo: loadingIndicator.bottomAnchor, constant: 20),
+            merchantLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            merchantLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            amountLabel.topAnchor.constraint(equalTo: merchantLabel.bottomAnchor, constant: 8),
+            amountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            amountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            amountLabel.bottomAnchor.constraint(lessThanOrEqualTo: view.bottomAnchor, constant: -20)
+        ])
+
+        // 初始状态：显示"分析中..."
+        showAnalyzing()
+    }
+
+    // MARK: - State Management
+    private func showAnalyzing() {
+        statusLabel.text = "分析中"
+        merchantLabel.text = ""
+        amountLabel.text = ""
+        loadingIndicator.startAnimating()
+
+        // 启动点点动画
+        startDotAnimation()
+    }
+
+    private func showResult() {
+        // 停止动画
+        dotAnimationTimer?.invalidate()
+        loadingIndicator.stopAnimating()
+
+        // 显示结果
+        statusLabel.text = "已完成"
+        merchantLabel.text = ""
+        amountLabel.text = ""
+    }
+
+    private func showError(message: String) {
+        dotAnimationTimer?.invalidate()
+        loadingIndicator.stopAnimating()
+
+        statusLabel.text = "识别失败"
+        merchantLabel.text = message
+        amountLabel.text = ""
+        amountLabel.textColor = .systemRed
+    }
+
+    // MARK: - Dot Animation
+    private func startDotAnimation() {
+        dotCount = 0
+        dotAnimationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.dotCount = (self.dotCount + 1) % 4
+            let dots = String(repeating: ".", count: self.dotCount)
+            self.statusLabel.text = "分析中\(dots)"
+        }
+    }
+
+    // MARK: - Data Monitoring
+    private func startMonitoringSharedData() {
+        // 使用定时器轮询共享数据
+        Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+            self?.checkSharedData()
+        }
+    }
+
+    private func checkSharedData() {
+        guard let sharedDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
+            print("❌ [IntentUI] 无法访问 App Group")
+            return
+        }
+
+        guard let status = sharedDefaults.string(forKey: "expense_status") else {
+            return
+        }
+
+        print("📱 [IntentUI] 状态: \(status)")
+
+        switch status {
+        case "analyzing":
+            // 保持分析中状态
+            break
+
+        case "success":
+            print("✅ [IntentUI] 显示结果: 已完成")
+            showResult()
+
+            // 清除数据
+            sharedDefaults.removeObject(forKey: "expense_status")
+
+        case "error":
+            if let errorMsg = sharedDefaults.string(forKey: "expense_error") {
+                print("❌ [IntentUI] 显示错误: \(errorMsg)")
+                showError(message: errorMsg)
+
+                // 清除数据
+                sharedDefaults.removeObject(forKey: "expense_status")
+            }
+
+        default:
+            break
+        }
+    }
+
+    // MARK: - INUIHostedViewControlling
+    func configureView(for parameters: Set<INParameter>, of interaction: INInteraction, interactiveBehavior: INUIInteractiveBehavior, context: INUIHostedViewContext, completion: @escaping (Bool, Set<INParameter>, CGSize) -> Void) {
+
+        // 配置视图大小
+        let desiredSize = CGSize(width: self.extensionContext!.hostedViewMaximumAllowedSize.width,
+                                height: 200)
+
+        completion(true, parameters, desiredSize)
+    }
+
+    var desiredSize: CGSize {
+        return CGSize(width: self.extensionContext!.hostedViewMaximumAllowedSize.width, height: 200)
+    }
+}
