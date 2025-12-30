@@ -13,6 +13,7 @@ class IntentHandler: INExtension, ShowExpenseIntentIntentHandling {
     private let appGroupIdentifier = "group.com.dm.AppIntent"
 
     override func handler(for intent: INIntent) -> Any {
+        print("🔧 [INIntent] handler(for:) 被调用 - intent类型: \(type(of: intent))")
         // This is the default implementation.  If you want different objects to handle different intents,
         // you can override this and return the handler you want for that particular intent.
 
@@ -33,36 +34,30 @@ class IntentHandler: INExtension, ShowExpenseIntentIntentHandling {
             return
         }
 
-        // 设置初始状态：分析中
-        sharedDefaults.set("analyzing", forKey: "expense_status")
+        // 写入调试标记，证明这个方法被调用了
+        sharedDefaults.set("HANDLER_CALLED", forKey: "debug_status")
         sharedDefaults.synchronize()
-        print("✅ [INIntent] 已设置状态为 analyzing")
 
-        // 启动后台任务
-        DispatchQueue.global(qos: .userInitiated).async {
-            print("⏳ [INIntent] 开始 3 秒任务...")
-            Thread.sleep(forTimeInterval: 3.0) // 3秒
+        // 直接保存模拟的识别结果（UI Extension 会延迟 3 秒后显示）
+        let merchant = "星巴克咖啡"
+        let amount = 45.50
 
-            print("✅ [INIntent] 3 秒完成")
+        sharedDefaults.set("analyzing", forKey: "expense_status")
+        sharedDefaults.set(merchant, forKey: "expense_merchant")
+        sharedDefaults.set(amount, forKey: "expense_amount")
+        sharedDefaults.set(Date().timeIntervalSince1970, forKey: "expense_start_time")
+        sharedDefaults.synchronize()
 
-            // 更新状态为已完成
-            sharedDefaults.set("success", forKey: "expense_status")
-            sharedDefaults.synchronize()
+        print("✅ [INIntent] 已保存数据 - merchant: \(merchant), amount: \(amount)")
 
-            print("✅ [INIntent] 已更新共享数据为 success")
-
-            // 返回响应
-            DispatchQueue.main.async {
-                let response = ShowExpenseIntentIntentResponse(code: .success, userActivity: nil)
-                completion(response)
-                print("✅ [INIntent] 已返回响应")
-            }
-        }
-
-        // 注意：这里不要立即 completion，而是在后台任务完成后调用
+        // 立即返回响应
+        let response = ShowExpenseIntentIntentResponse(code: .success, userActivity: nil)
+        completion(response)
+        print("✅ [INIntent] 已返回响应")
     }
 
     func confirm(intent: ShowExpenseIntentIntent, completion: @escaping (ShowExpenseIntentIntentResponse) -> Void) {
+        print("🔍 [INIntent] confirm 被调用")
         // 确认阶段，直接通过
         completion(ShowExpenseIntentIntentResponse(code: .ready, userActivity: nil))
     }
