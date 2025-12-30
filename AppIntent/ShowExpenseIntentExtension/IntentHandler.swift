@@ -28,8 +28,7 @@ class IntentHandler: INExtension, ShowExpenseIntentIntentHandling {
         // 访问 App Group
         guard let sharedDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
             print("❌ [INIntent] 无法访问 App Group")
-            let response = ShowExpenseIntentIntentResponse(code: .failure, userActivity: nil)
-            response.message = "配置错误"
+            let response = ShowExpenseIntentIntentResponse(code: .success, userActivity: nil)
             completion(response)
             return
         }
@@ -50,15 +49,16 @@ class IntentHandler: INExtension, ShowExpenseIntentIntentHandling {
 
         print("✅ [INIntent] 已保存数据 - merchant: \(merchant), amount: \(amount)")
 
-        // 立即返回响应
+        // 立即返回响应，不包含任何 userActivity
         let response = ShowExpenseIntentIntentResponse(code: .success, userActivity: nil)
+
         completion(response)
         print("✅ [INIntent] 已返回响应")
     }
 
-    func confirm(intent: ShowExpenseIntentIntent, completion: @escaping (ShowExpenseIntentIntentResponse) -> Void) {
-        print("🔍 [INIntent] confirm 被调用")
-        // 确认阶段，直接通过
-        completion(ShowExpenseIntentIntentResponse(code: .ready, userActivity: nil))
-    }
+    // 移除 confirm 方法，因为我们不需要用户确认
+    // func confirm(intent: ShowExpenseIntentIntent, completion: @escaping (ShowExpenseIntentIntentResponse) -> Void) {
+    //     print("🔍 [INIntent] confirm 被调用")
+    //     completion(ShowExpenseIntentIntentResponse(code: .ready, userActivity: nil))
+    // }
 }

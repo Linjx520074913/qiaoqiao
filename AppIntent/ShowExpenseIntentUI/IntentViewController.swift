@@ -10,49 +10,106 @@ import UIKit
 
 class IntentViewController: UIViewController, INUIHostedViewControlling {
 
+    // MARK: - Init
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        print("🎬🎬🎬 [IntentUI] init(nibName:bundle:) 被调用")
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        print("🎬🎬🎬 [IntentUI] init(coder:) 被调用")
+    }
+
     // MARK: - UI Elements
+
+    // 头部容器
+    private let headerContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    // 应用图标
+    private let appIconLabel: UILabel = {
+        let label = UILabel()
+        label.text = "📊"
+        label.font = UIFont.systemFont(ofSize: 24)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    // 应用标题
+    private let appTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "昨夜记账 | 自动记账"
+        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    // 状态容器（带圆角背景，自适应宽度的胶囊形状）
+    private let statusContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.systemGray6
+        view.layer.cornerRadius = 20  // 更大的圆角，形成胶囊效果
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    // 状态图标
+    private let statusIconLabel: UILabel = {
+        let label = UILabel()
+        label.text = "🧐"
+        label.font = UIFont.systemFont(ofSize: 18)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    // 状态文字
     private let statusLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 20, weight: .medium)
-        label.textAlignment = .center
-        label.numberOfLines = 0
+        label.text = "分析中..."
+        label.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        label.textColor = .label
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
-    private let merchantLabel: UILabel = {
+    // 提示文字
+    private let hintLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 16, weight: .regular)
-        label.textAlignment = .center
-        label.numberOfLines = 0
+        label.text = "呼呼，胖胖正在努力分析账单..."
+        label.font = UIFont.systemFont(ofSize: 13, weight: .regular)
         label.textColor = .secondaryLabel
+        label.textAlignment = .left
+        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
+    // 完成按钮
+    private let completeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("完成", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        button.backgroundColor = UIColor.systemBlue
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 25
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    // 调试标签
     private let debugLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 10, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 9, weight: .regular)
         label.textAlignment = .center
         label.numberOfLines = 0
-        label.textColor = .systemGray
+        label.textColor = .systemGray3
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
-    }()
-
-    private let amountLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 32, weight: .bold)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
-    private let loadingIndicator: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .medium)
-        indicator.translatesAutoresizingMaskIntoConstraints = false
-        indicator.hidesWhenStopped = true
-        return indicator
     }()
 
     private var dotAnimationTimer: Timer?
@@ -69,8 +126,20 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        print("🎬 [IntentUI] viewDidLoad 被调用")
+
         setupUI()
         startMonitoringSharedData()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        print("👀 [IntentUI] viewWillAppear - view.frame: \(view.frame)")
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        print("✨ [IntentUI] viewDidAppear - view.frame: \(view.frame)")
     }
 
     deinit {
@@ -85,53 +154,90 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
     private func setupUI() {
         view.backgroundColor = .systemBackground
 
-        // 添加子视图
-        view.addSubview(statusLabel)
-        view.addSubview(loadingIndicator)
-        view.addSubview(merchantLabel)
-        view.addSubview(amountLabel)
+        // 添加头部
+        view.addSubview(headerContainer)
+        headerContainer.addSubview(appIconLabel)
+        headerContainer.addSubview(appTitleLabel)
+
+        // 添加状态容器
+        view.addSubview(statusContainer)
+        statusContainer.addSubview(statusIconLabel)
+        statusContainer.addSubview(statusLabel)
+
+        // 添加提示文字
+        view.addSubview(hintLabel)
+
+        // 添加完成按钮
+        view.addSubview(completeButton)
+        completeButton.addTarget(self, action: #selector(completeButtonTapped), for: .touchUpInside)
+
+        // 添加调试标签
         view.addSubview(debugLabel)
 
-        // 布局
+        // 布局约束
         NSLayoutConstraint.activate([
-            statusLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-            statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            // 头部容器 - 使用 safeAreaLayoutGuide 以避免被系统标题遮挡
+            headerContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            headerContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            headerContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            headerContainer.heightAnchor.constraint(equalToConstant: 32),
 
-            loadingIndicator.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 12),
-            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            // 应用图标
+            appIconLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor),
+            appIconLabel.centerYAnchor.constraint(equalTo: headerContainer.centerYAnchor),
 
-            merchantLabel.topAnchor.constraint(equalTo: loadingIndicator.bottomAnchor, constant: 20),
-            merchantLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            merchantLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            // 应用标题
+            appTitleLabel.leadingAnchor.constraint(equalTo: appIconLabel.trailingAnchor, constant: 8),
+            appTitleLabel.centerYAnchor.constraint(equalTo: headerContainer.centerYAnchor),
 
-            amountLabel.topAnchor.constraint(equalTo: merchantLabel.bottomAnchor, constant: 8),
-            amountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            amountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            // 状态容器 - 自适应宽度，胶囊形状
+            statusContainer.topAnchor.constraint(equalTo: headerContainer.bottomAnchor, constant: 20),
+            statusContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            statusContainer.heightAnchor.constraint(equalToConstant: 40),
 
-            debugLabel.topAnchor.constraint(equalTo: amountLabel.bottomAnchor, constant: 8),
-            debugLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            debugLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            debugLabel.bottomAnchor.constraint(lessThanOrEqualTo: view.bottomAnchor, constant: -20)
+            // 状态图标
+            statusIconLabel.leadingAnchor.constraint(equalTo: statusContainer.leadingAnchor, constant: 12),
+            statusIconLabel.centerYAnchor.constraint(equalTo: statusContainer.centerYAnchor),
+
+            // 状态文字
+            statusLabel.leadingAnchor.constraint(equalTo: statusIconLabel.trailingAnchor, constant: 6),
+            statusLabel.centerYAnchor.constraint(equalTo: statusContainer.centerYAnchor),
+            statusLabel.trailingAnchor.constraint(equalTo: statusContainer.trailingAnchor, constant: -14),
+
+            // 提示文字
+            hintLabel.topAnchor.constraint(equalTo: statusContainer.bottomAnchor, constant: 40),
+            hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+
+            // 完成按钮
+            completeButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            completeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            completeButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+            completeButton.heightAnchor.constraint(equalToConstant: 50),
+
+            // 调试标签
+            debugLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            debugLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            debugLabel.bottomAnchor.constraint(equalTo: completeButton.topAnchor, constant: -8)
         ])
 
         // 初始状态：显示"分析中..."
         showAnalyzing()
     }
 
+    @objc private func completeButtonTapped() {
+        print("✅ [IntentUI] 完成按钮被点击")
+        // 直接关闭 Intent UI Extension
+        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
     // MARK: - State Management
     private func showAnalyzing() {
-        countdown = 3
-        statusLabel.text = "分析中... 3s"
-        merchantLabel.text = ""
-        amountLabel.text = ""
-        loadingIndicator.startAnimating()
+        statusIconLabel.text = "🧐"
+        statusLabel.text = "分析中..."
+        hintLabel.text = "呼呼，胖胖正在努力分析账单..."
 
-        // 启动点点动画
-        startDotAnimation()
-        // 启动倒计时
-        startCountdown()
-        // 启动 3 秒后显示结果的定时器
+        // 启动数据轮询
         scheduleResultDisplay()
     }
 
@@ -139,50 +245,25 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         // 停止所有动画
         dotAnimationTimer?.invalidate()
         countdownTimer?.invalidate()
-        loadingIndicator.stopAnimating()
 
-        // 显示结果
+        // 更新状态
+        statusIconLabel.text = "✅"
         statusLabel.text = "识别完成"
-        merchantLabel.text = merchant
-        amountLabel.text = String(format: "¥%.2f", amount)
-        amountLabel.textColor = .systemGreen
+        hintLabel.text = "\(merchant) · ¥\(String(format: "%.2f", amount))"
     }
 
     private func showError(message: String) {
         dotAnimationTimer?.invalidate()
         countdownTimer?.invalidate()
-        loadingIndicator.stopAnimating()
 
+        statusIconLabel.text = "❌"
         statusLabel.text = "识别失败"
-        merchantLabel.text = message
-        amountLabel.text = ""
-        amountLabel.textColor = .systemRed
+        hintLabel.text = message
     }
 
-    // MARK: - Dot Animation
+    // MARK: - Dot Animation (已弃用，使用脉冲动画代替)
     private func startDotAnimation() {
-        dotCount = 0
-        dotAnimationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.dotCount = (self.dotCount + 1) % 4
-            let dots = String(repeating: ".", count: self.dotCount)
-            self.statusLabel.text = "分析中\(dots) \(self.countdown)s"
-        }
-    }
-
-    // MARK: - Countdown
-    private func startCountdown() {
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.countdown -= 1
-            if self.countdown >= 0 {
-                let dots = String(repeating: ".", count: self.dotCount)
-                self.statusLabel.text = "分析中\(dots) \(self.countdown)s"
-            }
-            if self.countdown < 0 {
-                self.countdownTimer?.invalidate()
-            }
-        }
+        // 现在使用 startPulseAnimation() 代替
     }
 
     // MARK: - Result Display
@@ -271,14 +352,23 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
     // MARK: - INUIHostedViewControlling
     func configureView(for parameters: Set<INParameter>, of interaction: INInteraction, interactiveBehavior: INUIInteractiveBehavior, context: INUIHostedViewContext, completion: @escaping (Bool, Set<INParameter>, CGSize) -> Void) {
 
-        // 配置视图大小
-        let desiredSize = CGSize(width: self.extensionContext!.hostedViewMaximumAllowedSize.width,
-                                height: 200)
+        print("🎨 [IntentUI] configureView 被调用")
+        print("   - interactiveBehavior: \(interactiveBehavior.rawValue)")
+        print("   - context: \(context.rawValue)")
+        print("   - hostedViewMaximumAllowedSize: \(self.extensionContext!.hostedViewMaximumAllowedSize)")
 
-        completion(true, parameters, desiredSize)
+        // 设置合适的高度以容纳所有元素
+        let desiredSize = CGSize(width: self.extensionContext!.hostedViewMaximumAllowedSize.width,
+                                height: 280)
+
+        print("   - 返回的 desiredSize: \(desiredSize)")
+
+        // 关键：返回 false 和空的参数集，明确告诉系统我们的 UI 不需要任何用户交互
+        // 这应该能避免系统添加确认界面
+        completion(false, Set(), desiredSize)
     }
 
     var desiredSize: CGSize {
-        return CGSize(width: self.extensionContext!.hostedViewMaximumAllowedSize.width, height: 200)
+        return CGSize(width: self.extensionContext!.hostedViewMaximumAllowedSize.width, height: 220)
     }
 }

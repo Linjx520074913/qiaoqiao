@@ -104,6 +104,13 @@
 			);
 			target = CB62F6572F02690A00E61643 /* ShowExpenseIntentExtension */;
 		};
+		CB7367FC2F036C1800251A2C /* Exceptions for "AppIntent" folder in "AppIntent" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CB6D39962EF91466003BC8A1 /* AppIntent */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -133,6 +140,9 @@
 		};
 		CB6D39992EF91466003BC8A1 /* AppIntent */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CB7367FC2F036C1800251A2C /* Exceptions for "AppIntent" folder in "AppIntent" target */,
+			);
 			path = AppIntent;
 			sourceTree = "<group>";
 		};
@@ -839,6 +849,7 @@
 				DEVELOPMENT_TEAM = DMR5SZUGP9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppIntent/Info.plist;
 				"INFOPLIST_KEY_NSAppTransportSecurity[sdk=*]" = "{ NSAllowsArbitraryLoads = YES; }";
 				INFOPLIST_KEY_NSBonjourServices = _http._tcp;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要访问本地网络以连接后端服务进行账单识别";
@@ -873,6 +884,7 @@
 				DEVELOPMENT_TEAM = DMR5SZUGP9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppIntent/Info.plist;
 				"INFOPLIST_KEY_NSAppTransportSecurity[sdk=*]" = "{ NSAllowsArbitraryLoads = YES; }";
 				INFOPLIST_KEY_NSBonjourServices = _http._tcp;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要访问本地网络以连接后端服务进行账单识别";
