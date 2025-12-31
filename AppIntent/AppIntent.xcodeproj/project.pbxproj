@@ -639,7 +639,8 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
+			
+				CODE_SIGN_ENTITLEMENTS = ShowExpenseIntentUI/ShowExpenseIntentUI.entitlements;};
 			name = Debug;
 		};
 		CB62F64C2F02641900E61643 /* Release */ = {
@@ -664,7 +665,8 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
+			
+				CODE_SIGN_ENTITLEMENTS = ShowExpenseIntentUI/ShowExpenseIntentUI.entitlements;};
 			name = Release;
 		};
 		CB62F6662F02690A00E61643 /* Debug */ = {

@@ -122,7 +122,6 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         print("🎬 [IntentUI] viewDidLoad 被调用")
 
         setupUI()
-        startMonitoringSharedData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -162,6 +161,9 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 
         // 添加调试标签
         view.addSubview(debugLabel)
+
+        // 立即开始识别
+        startBillRecognition()
 
         // 布局约束
         NSLayoutConstraint.activate([
@@ -205,9 +207,6 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
             debugLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
             debugLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20)
         ])
-
-        // 初始状态：显示"分析中..."
-        showAnalyzing()
     }
 
     // 完成按钮处理方法已移除，使用系统按钮
@@ -247,6 +246,95 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         // 现在使用 startPulseAnimation() 代替
     }
 
+    // MARK: - Bill Recognition
+    private func startBillRecognition() {
+        print("🚀 [IntentUI] 开始识别流程...")
+
+        Task {
+            await performBillScan()
+        }
+    }
+
+    private func performBillScan() async {
+        print("📸 [IntentUI] 开始从共享容器读取图片...")
+        print("🔑 [IntentUI] App Group ID: \(appGroupIdentifier)")
+
+        // 从共享容器读取图片
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+            print("❌ [IntentUI] 无法访问共享容器")
+            print("❌ [IntentUI] 请检查 ShowExpenseIntentUI target 的 Signing & Capabilities")
+            print("❌ [IntentUI] 确保已添加 App Groups 权限: \(appGroupIdentifier)")
+
+            await MainActor.run {
+                showError(message: "无法访问共享容器\n请检查 App Groups 权限配置")
+            }
+            return
+        }
+
+        let imageURL = containerURL.appendingPathComponent("bill_image.jpg")
+        print("📁 [IntentUI] 图片路径: \(imageURL.path)")
+
+        guard FileManager.default.fileExists(atPath: imageURL.path) else {
+            print("❌ [IntentUI] 图片文件不存在")
+
+            // 列出共享容器中的所有文件
+            do {
+                let files = try FileManager.default.contentsOfDirectory(at: containerURL, includingPropertiesForKeys: nil)
+                print("📂 [IntentUI] 共享容器中的文件: \(files.map { $0.lastPathComponent })")
+            } catch {
+                print("❌ [IntentUI] 无法列出文件: \(error)")
+            }
+
+            showError(message: "未找到图片文件，请先执行 保存账单图片")
+            return
+        }
+
+        guard let imageData = try? Data(contentsOf: imageURL),
+              let image = UIImage(data: imageData) else {
+            print("❌ [IntentUI] 无法加载图片")
+            showError(message: "图片加载失败")
+            return
+        }
+
+        print("✅ [IntentUI] 图片加载成功，大小: \(imageData.count) bytes")
+        print("🌐 [IntentUI] 开始调用 API...")
+
+        // 调用后端 API
+        do {
+            let scanService = BillScanService.shared
+            print("📡 [IntentUI] 正在上传图片并识别...")
+
+            let result = try await scanService.scanBill(image: image)
+
+            print("📥 [IntentUI] API 返回结果: success=\(result.success)")
+
+            await MainActor.run {
+                if result.success, let data = result.data, let invoice = data.invoice {
+                    let merchant = invoice.merchant ?? "未知商家"
+                    let amount = invoice.total ?? 0.0
+
+                    print("✅ [IntentUI] 识别成功: \(merchant) - ¥\(amount)")
+                    showResult(merchant: merchant, amount: amount)
+                } else {
+                    let errorMsg = result.error ?? "识别失败"
+                    print("❌ [IntentUI] 识别失败: \(errorMsg)")
+                    showError(message: errorMsg)
+                }
+            }
+        } catch {
+            print("❌ [IntentUI] API 调用失败: \(error.localizedDescription)")
+            print("❌ [IntentUI] 错误详情: \(error)")
+
+            await MainActor.run {
+                showError(message: "网络请求失败: \(error.localizedDescription)")
+            }
+        }
+
+        // 删除临时图片
+        try? FileManager.default.removeItem(at: imageURL)
+        print("🗑️ [IntentUI] 已删除临时图片")
+    }
+
     // MARK: - Result Display
     private func scheduleResultDisplay() {
         debugLabel.text = "等待数据..."
@@ -255,7 +343,7 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         // 记录启动时间
         let startTime = Date()
 
-        // 定时检查数据,最多等待 5 秒
+        // 定时检查数据,最多等待 30 秒（给 API 足够的识别时间）
         resultTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
             guard let self = self else {
                 print("⚠️ [IntentUI] self 已释放")
@@ -265,12 +353,12 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
 
             let elapsed = Date().timeIntervalSince(startTime)
 
-            // 超时检查
-            if elapsed > 5.0 {
-                print("⏱️ [IntentUI] 等待超时 (5秒)")
+            // 超时检查 - 延长到 30 秒
+            if elapsed > 30.0 {
+                print("⏱️ [IntentUI] 等待超时 (30秒)")
                 timer.invalidate()
                 self.debugLabel.text = "❌ 等待超时"
-                self.showError(message: "未收到识别结果")
+                self.showError(message: "识别超时，请重试")
                 return
             }
 
@@ -280,8 +368,34 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
                 return
             }
 
-            // 检查是否有数据
-            if let merchant = sharedDefaults.string(forKey: "expense_merchant"), !merchant.isEmpty {
+            // 检查状态
+            let status = sharedDefaults.string(forKey: "expense_status") ?? ""
+
+            // 如果是错误状态
+            if status == "error" {
+                let errorMsg = sharedDefaults.string(forKey: "expense_merchant") ?? "识别失败"
+                print("❌ [IntentUI] 检测到错误: \(errorMsg), 耗时: \(String(format: "%.2f", elapsed))秒")
+                timer.invalidate()
+
+                // 停止所有动画
+                self.statusCheckTimer?.invalidate()
+                self.countdownTimer?.invalidate()
+                self.dotAnimationTimer?.invalidate()
+
+                // 显示错误
+                self.showError(message: errorMsg)
+
+                // 清除数据
+                sharedDefaults.removeObject(forKey: "expense_status")
+                sharedDefaults.removeObject(forKey: "expense_merchant")
+                sharedDefaults.removeObject(forKey: "expense_amount")
+                sharedDefaults.removeObject(forKey: "expense_start_time")
+                return
+            }
+
+            // 如果是完成状态
+            if status == "completed" {
+                let merchant = sharedDefaults.string(forKey: "expense_merchant") ?? "未知商家"
                 let amount = sharedDefaults.double(forKey: "expense_amount")
 
                 print("✅ [IntentUI] 检测到数据: \(merchant) - ¥\(amount), 耗时: \(String(format: "%.2f", elapsed))秒")
@@ -304,7 +418,7 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
             } else {
                 // 继续等待
                 if Int(elapsed * 10) % 10 == 0 {  // 每秒打印一次
-                    print("⏳ [IntentUI] 等待中... \(String(format: "%.1f", elapsed))秒")
+                    print("⏳ [IntentUI] 等待中... 状态: \(status), 耗时: \(String(format: "%.1f", elapsed))秒")
                 }
             }
         }
