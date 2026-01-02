@@ -117,6 +117,37 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         return label
     }()
 
+    // 网络错误容器（用于居中显示图标和文字）
+    private let networkErrorContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+
+    // 网络错误图标（大图标，用于网络错误时显示）
+    private let networkErrorIconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "NetworkErrorSloth")
+        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .clear
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+
+    // 网络错误提示文字（在图标右侧显示）
+    private let networkErrorLabel: UILabel = {
+        let label = UILabel()
+        label.text = "网络异常，请检查网络后重试"
+        label.font = UIFont.systemFont(ofSize: 15, weight: .regular)
+        label.textColor = .label
+        label.textAlignment = .left
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     // 结果容器 - 用于显示识别成功后的商家信息
     private let resultContainer: UIView = {
         let view = UIView()
@@ -233,6 +264,11 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         contentContainer.addSubview(hintContainer)
         hintContainer.addSubview(hintLabel)
 
+        // 添加网络错误容器及其子视图
+        contentContainer.addSubview(networkErrorContainer)
+        networkErrorContainer.addSubview(networkErrorIconImageView)
+        networkErrorContainer.addSubview(networkErrorLabel)
+
         // 添加结果容器
         contentContainer.addSubview(resultContainer)
         resultContainer.addSubview(merchantIconImageView)
@@ -269,7 +305,7 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
             contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            // 树懒图标 - 独立显示，无背景
+            // 树懒图标 - 独立显示，无背景（网络错误时会调整位置和大小）
             statusIconImageView.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16),
             statusIconImageView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
             statusIconImageView.widthAnchor.constraint(equalToConstant: 48),
@@ -301,6 +337,25 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
             hintLabel.leadingAnchor.constraint(equalTo: hintContainer.leadingAnchor, constant: 12),
             hintLabel.trailingAnchor.constraint(equalTo: hintContainer.trailingAnchor, constant: -12),
             hintLabel.bottomAnchor.constraint(equalTo: hintContainer.bottomAnchor, constant: -12),
+
+            // 网络错误容器 - 水平垂直居中
+            networkErrorContainer.centerXAnchor.constraint(equalTo: contentContainer.centerXAnchor),
+            networkErrorContainer.centerYAnchor.constraint(equalTo: contentContainer.centerYAnchor, constant: -20),
+            networkErrorContainer.leadingAnchor.constraint(greaterThanOrEqualTo: contentContainer.leadingAnchor, constant: 20),
+            networkErrorContainer.trailingAnchor.constraint(lessThanOrEqualTo: contentContainer.trailingAnchor, constant: -20),
+
+            // 网络错误图标 - 在容器左侧
+            networkErrorIconImageView.leadingAnchor.constraint(equalTo: networkErrorContainer.leadingAnchor),
+            networkErrorIconImageView.centerYAnchor.constraint(equalTo: networkErrorContainer.centerYAnchor),
+            networkErrorIconImageView.topAnchor.constraint(equalTo: networkErrorContainer.topAnchor),
+            networkErrorIconImageView.bottomAnchor.constraint(equalTo: networkErrorContainer.bottomAnchor),
+            networkErrorIconImageView.widthAnchor.constraint(equalToConstant: 100),
+            networkErrorIconImageView.heightAnchor.constraint(equalToConstant: 100),
+
+            // 网络错误文字 - 在图标右侧
+            networkErrorLabel.leadingAnchor.constraint(equalTo: networkErrorIconImageView.trailingAnchor, constant: 16),
+            networkErrorLabel.centerYAnchor.constraint(equalTo: networkErrorIconImageView.centerYAnchor),
+            networkErrorLabel.trailingAnchor.constraint(equalTo: networkErrorContainer.trailingAnchor),
 
             // 结果容器 - 和账单图标占据相同位置
             resultContainer.topAnchor.constraint(equalTo: statusIconImageView.bottomAnchor, constant: 20),
@@ -376,9 +431,38 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
         dotAnimationTimer?.invalidate()
         countdownTimer?.invalidate()
 
-        statusIconImageView.image = UIImage(named: "SadSloth")
-        statusLabel.text = "识别失败"
-        hintLabel.text = message
+        // 判断是否为网络相关错误
+        let isNetworkError = message.contains("网络") ||
+                           message.contains("Network") ||
+                           message.contains("network") ||
+                           message.contains("请求失败") ||
+                           message.contains("连接")
+
+        // 网络错误时：显示居中的图标 + 文字（参考 2.jpg）
+        if isNetworkError {
+            // 显示网络错误容器（图标 + 文字，水平垂直居中）
+            networkErrorContainer.isHidden = false
+
+            // 隐藏所有其他元素
+            statusIconImageView.isHidden = true
+            statusContainer.isHidden = true
+            receiptIconImageView.isHidden = true
+            hintContainer.isHidden = true
+        } else {
+            // 其他错误：显示完整信息
+            statusIconImageView.image = UIImage(named: "SadSloth")
+            statusIconImageView.isHidden = false
+
+            statusLabel.text = "识别失败"
+            statusContainer.isHidden = false
+
+            hintLabel.text = message
+            hintContainer.isHidden = false
+            hintContainer.alpha = 1
+
+            // 隐藏网络错误容器
+            networkErrorContainer.isHidden = true
+        }
     }
 
     // MARK: - Dot Animation
@@ -479,7 +563,12 @@ class IntentViewController: UIViewController, INUIHostedViewControlling {
             print("❌ [IntentUI] 错误详情: \(error)")
 
             await MainActor.run {
-                showError(message: "网络请求失败: \(error.localizedDescription)")
+                // 统一使用"网络"关键词，确保触发网络错误显示
+                if let urlError = error as? URLError {
+                    showError(message: "网络请求失败")
+                } else {
+                    showError(message: "网络请求失败: \(error.localizedDescription)")
+                }
             }
         }
 
